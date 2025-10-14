@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "white-shorts"
+version = "0.3.0"
+description = "WhiteShorts 3.0 NHL forecasting suite (core)"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+ws = "white_shorts.cli:app"

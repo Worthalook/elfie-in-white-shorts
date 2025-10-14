@@ -1,0 +1,11 @@
+python-dotenv
+pandas
+numpy
+pyarrow
+duckdb
+scikit-learn
+lightgbm
+statsmodels
+typer[all]
+requests
+pydantic

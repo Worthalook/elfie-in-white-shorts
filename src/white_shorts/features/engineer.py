@@ -23,7 +23,10 @@ def add_rolling(df: pd.DataFrame) -> pd.DataFrame:
                .apply(lambda s: s.rolling(5, min_periods=1).mean())
                .reset_index(level=0, drop=True)
         )
-
+     # Backward-compat alias: some code expects 'rolling_sog_5'
+    if "rolling_shots_on_goal_5" in out.columns:
+        out["rolling_sog_5"] = out["rolling_shots_on_goal_5"]
+        
     # --- team-level days off (needs datetime for .dt) ---
     out = out.sort_values(["team", "date"])
     out["days_off_team"] = (

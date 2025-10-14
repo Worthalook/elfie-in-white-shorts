@@ -67,39 +67,39 @@ def tomorrow(
           .rename(columns={"points":"team_goals"})
 )
 
-# Team-level features aggregated from player rows
-team_features = (
-    df_feat.groupby(TEAM_KEYS, as_index=False)[TEAM_FEATURES]
-          .mean()
-)
+    # Team-level features aggregated from player rows
+    team_features = (
+        df_feat.groupby(TEAM_KEYS, as_index=False)[TEAM_FEATURES]
+              .mean()
+    )
 
-# Rows used for match totals prediction (must include TEAM_FEATURES)
-team_rows = team_features  # already has TEAM_KEYS + TEAM_FEATURES
+    # Rows used for match totals prediction (must include TEAM_FEATURES)
+    team_rows = team_features  # already has TEAM_KEYS + TEAM_FEATURES
 
-preds_totals = predict_match_totals(bundle_team_home, bundle_team_away, team_rows, run_id)
-TEAM_KEYS = ["date","game_id","team","opponent","home_or_away"]
+    preds_totals = predict_match_totals(bundle_team_home, bundle_team_away, team_rows, run_id)
+    TEAM_KEYS = ["date","game_id","team","opponent","home_or_away"]
 
     
-# Build team target (not strictly needed for prediction, but harmless) team_target = (
-df_feat.groupby(TEAM_KEYS, as_index=False)["points"].sum().rename(columns={"points":"team_goals"})
-#)
+    # Build team target (not strictly needed for prediction, but harmless) team_target = (
+    df_feat.groupby(TEAM_KEYS, as_index=False)["points"].sum().rename(columns={"points":"team_goals"})
+    #)
 
-# Team-level features aggregated from player rows
-team_features = (
-    df_feat.groupby(TEAM_KEYS, as_index=False)[TEAM_FEATURES]
-          .mean()
-)
+    # Team-level features aggregated from player rows
+    team_features = (
+        df_feat.groupby(TEAM_KEYS, as_index=False)[TEAM_FEATURES]
+              .mean()
+    )
 
-# Rows used for match totals prediction (must include TEAM_FEATURES)
-team_rows = team_features  # already has TEAM_KEYS + TEAM_FEATURES
+    # Rows used for match totals prediction (must include TEAM_FEATURES)
+    team_rows = team_features  # already has TEAM_KEYS + TEAM_FEATURES
 
-preds_totals = predict_match_totals(bundle_team_home, bundle_team_away, team_rows, run_id)
-    # Append to DuckDB
-all_preds = pd.concat([preds_points, preds_goals, preds_assists, preds_shots, preds_totals], ignore_index=True)
-append("fact_predictions", all_preds)
+    preds_totals = predict_match_totals(bundle_team_home, bundle_team_away, team_rows, run_id)
+        # Append to DuckDB
+    all_preds = pd.concat([preds_points, preds_goals, preds_assists, preds_shots, preds_totals], ignore_index=True)
+    append("fact_predictions", all_preds)
 
-# Emit CSV for quick inspection
-out_csv = f"{settings.PARQUET_DIR}/predictions_{run_id}.csv"
-os.makedirs(settings.PARQUET_DIR, exist_ok=True)
-all_preds.to_csv(out_csv, index=False)
-typer.echo(f"Wrote predictions → {out_csv}\nRun ID: {run_id}")
+    # Emit CSV for quick inspection
+    out_csv = f"{settings.PARQUET_DIR}/predictions_{run_id}.csv"
+    os.makedirs(settings.PARQUET_DIR, exist_ok=True)
+    all_preds.to_csv(out_csv, index=False)
+    typer.echo(f"Wrote predictions → {out_csv}\nRun ID: {run_id}")

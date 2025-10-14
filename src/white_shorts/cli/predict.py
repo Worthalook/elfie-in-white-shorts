@@ -20,7 +20,7 @@ def tomorrow(
     date: str = typer.Option(None, help="Prediction slate date (YYYY-MM-DD)"),
 ):
     """Scaffold end-to-end predict: trains quickly from YTD + predicts for (naive) slate from recent."""
-    init_db()
+init_db()
     run_id = str(uuid.uuid4())
 
     # Load and feature engineer

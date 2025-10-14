@@ -20,8 +20,7 @@ def all(csv_path: str = typer.Option("data/NHL_YTD.csv", help="Path to last seas
 
     # Player models
     for t in [Target.POINTS, Target.GOALS, Target.ASSISTS, Target.SHOTS]:
-        _ = train_player_count(df_feat, PLAYER_FEATURES, t.value,
-                               sample_weight=None, version=settings.MODEL_VERSION_TAG)
+        _ = train_player_count(df_feat, PLAYER_FEATURES, t.value, sample_weight=None, version=settings.MODEL_VERSION_TAG)
         typer.echo(f"Trained lgbm_poisson_{t.value} with {len(PLAYER_FEATURES)} features")
 
     # Team goals (naive): aggregate per team-game as target

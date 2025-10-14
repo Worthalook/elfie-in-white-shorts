@@ -26,33 +26,37 @@ def all(csv_path: str = typer.Option("data/NHL_YTD.csv", help="Path to last seas
     df_feat.groupby(TEAM_KEYS, as_index=False)["points"]
           .sum()
           .rename(columns={"points":"team_goals"})
-)
+    )
 
-# 2) team-level features (aggregate player rows → team row)
-# mean works fine for these rolling/rest features; you can switch to max/median if preferred
+    # 2) team-level features (aggregate player rows → team row)
+    # mean works fine for these rolling/rest features; you can switch to max/median if preferred
 
-team_features = (
-    df_feat.groupby(TEAM_KEYS, as_index=False)[TEAM_FEATURES]
-          .mean()
-)
+    team_features = (
+        df_feat.groupby(TEAM_KEYS, as_index=False)[TEAM_FEATURES]
+              .mean()
+    )
 
-# 3) merge features + target
-team_df = team_target.merge(team_features, on=TEAM_KEYS, how="left")
+    # 3) merge features + target
+    team_df = team_target.merge(team_features, on=TEAM_KEYS, how="left")
 
-# 4) train on the merged team_df
-bteam = train_team_goals(team_df, TEAM_FEATURES, target="team_goals", version=settings.MODEL_VERSION_TAG)
-path_team = save_model(bteam)
-typer.echo(f"Trained & saved team goals model → {path_team}")
-# Player models
-for t in [Target.POINTS, Target.GOALS, Target.ASSISTS, Target.SHOTS]:
-    _ = train_player_count(df_feat, PLAYER_FEATURES, t.value,
-    sample_weight=None, version=settings.MODEL_VERSION_TAG)
+    # 4) train on the merged team_df
+    bteam = train_team_goals(team_df, TEAM_FEATURES, target="team_goals", version=settings.MODEL_VERSION_TAG)
+    path_team = save_model(bteam)
+    typer.echo(f"Trained & saved team goals model → {path_team}")
+    # Player models
+    for t in [Target.POINTS, Target.GOALS, Target.ASSISTS, Target.SHOTS]:
+        _ = train_player_count(df_feat, PLAYER_FEATURES, t.value,
+        sample_weight=None, version=settings.MODEL_VERSION_TAG)
 
-typer.echo(f"Trained lgbm_poisson_{t.value} with {len(PLAYER_FEATURES)} features")
+    typer.echo(f"Trained lgbm_poisson_{t.value} with {len(PLAYER_FEATURES)} features")
 
-# Team goals (naive): aggregate per team-game as target
-team = df_feat.groupby(["date","game_id","team","opponent","home_or_away"], as_index=False)["points"].sum()
-team = team.rename(columns={"points":"team_goals"})  # TODO: replace with real team goals if available
-_ = train_team_goals(team, TEAM_FEATURES, target="team_goals", version=settings.MODEL_VERSION_TAG)
+    # Team goals (naive): aggregate per team-game as target
+    team = df_feat.groupby(["date","game_id","team","opponent","home_or_away"], as_index=False)["points"].sum()
+    team = team.rename(columns={"points":"team_goals"})  # TODO: replace with real team goals if available
+    _ = train_team_goals(team, TEAM_FEATURES, target="team_goals", version=settings.MODEL_VERSION_TAG)
 
-typer.echo("Training complete (scaffold). Persist models using joblib if desired (TODO).")
+    typer.echo("Training complete (scaffold). Persist models using joblib if desired (TODO).")
+
+
+def save_model(bteam ):
+    return        

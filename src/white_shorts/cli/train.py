@@ -45,11 +45,12 @@ path_team = save_model(bteam)
 typer.echo(f"Trained & saved team goals model → {path_team}")
 # Player models
 for t in [Target.POINTS, Target.GOALS, Target.ASSISTS, Target.SHOTS]:
-  _ = train_player_count(df_feat, PLAYER_FEATURES, t.value,
+    _ = train_player_count(df_feat, PLAYER_FEATURES, t.value,
     sample_weight=None, version=settings.MODEL_VERSION_TAG)
-    typer.echo(f"Trained lgbm_poisson_{t.value} with {len(PLAYER_FEATURES)} features")
 
-    # Team goals (naive): aggregate per team-game as target
+typer.echo(f"Trained lgbm_poisson_{t.value} with {len(PLAYER_FEATURES)} features")
+
+# Team goals (naive): aggregate per team-game as target
 team = df_feat.groupby(["date","game_id","team","opponent","home_or_away"], as_index=False)["points"].sum()
 team = team.rename(columns={"points":"team_goals"})  # TODO: replace with real team goals if available
 _ = train_team_goals(team, TEAM_FEATURES, target="team_goals", version=settings.MODEL_VERSION_TAG)

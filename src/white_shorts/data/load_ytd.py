@@ -8,7 +8,7 @@ def load_ytd(csv_path: str | Path) -> pd.DataFrame:
     ensure_columns(df, REQUIRED_YTD_COLUMNS)
 
     # Normalise basic types
-    df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce").dt.date
+    df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")  # keep datetime64[ns]
     # home_or_away to {0,1}
     df["home_or_away"] = (
         pd.to_numeric(df["home_or_away"], errors="coerce")

@@ -31,28 +31,33 @@ def tomorrow(
 
     _check_features(df_feat, TEAM_FEATURES, where="df_feat (engineered)")
 
+
     def _bundle_from_loaded(d):
-        class B: pass
+        class B: ...
         b = B()
         b.model = d["model"]; b.features = d["features"]; b.target = d["target"]
         b.model_name = d["model_name"]; b.model_version = d["model_version"]
         return b
 
-    def _load_or_train(prefix, trainer, features, *args, **kwargs):
+    def _load_or_train(prefix: str, trainer, features: list[str], df, **kwargs):
+        """
+        Try load latest model (matching feature signature); else train.
+        """
         path = latest_model_path(prefix, features)
         if path:
             d = load_model(path)
-            # Guard: if features differ, retrain to current features
-            if d["features"] != features:
-                # (Optional) log a warning here
-                return trainer(*args, **kwargs)
+            # if the saved features don't match, train anew
+            if d.get("features") != features:
+                return trainer(df, features, **kwargs)
             return _bundle_from_loaded(d)
-        return trainer(*args, **kwargs)
+        # Fallback: train with the provided df + features
+        return trainer(df, features, **kwargs)
 
-    bundle_points  = _load_or_train("lgbm_poisson_points",         train_player_count, PLAYER_FEATURES, df_feat, target="points")
-    bundle_goals   = _load_or_train("lgbm_poisson_goals",          train_player_count, PLAYER_FEATURES, df_feat, target="goals")
-    bundle_assists = _load_or_train("lgbm_poisson_assists",        train_player_count, PLAYER_FEATURES, df_feat, target="assists")
-    bundle_shots   = _load_or_train("lgbm_poisson_shots_on_goal",  train_player_count, PLAYER_FEATURES, df_feat, target="shots_on_goal")
+
+    bundle_points  = _load_or_train("lgbm_tweedie_points",        train_player_count, PLAYER_FEATURES, df_feat, target="points")
+    bundle_goals   = _load_or_train("lgbm_tweedie_goals",         train_player_count, PLAYER_FEATURES, df_feat, target="goals")
+    bundle_assists = _load_or_train("lgbm_tweedie_assists",       train_player_count, PLAYER_FEATURES, df_feat, target="assists")
+    bundle_shots   = _load_or_train("lgbm_tweedie_shots_on_goal", train_player_count, PLAYER_FEATURES, df_feat, target="shots_on_goal")
 
     team = df_feat.groupby(["date","game_id","team","opponent","home_or_away"], as_index=False)["points"].sum()
     team = team.rename(columns={"points":"team_goals"})

@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 import pandas as pd
+import numpy as np
 from datetime import datetime
 from .poisson import poisson_quantiles, p_ge_k_json
 
@@ -15,6 +16,17 @@ def _normalize_target(val) -> str:
 def predict_player_counts(model_bundle, df_features: pd.DataFrame, run_id: str, target) -> pd.DataFrame:
     X = df_features[model_bundle.features].fillna(0)
     lam = model_bundle.model.predict(X)
+    
+    
+    # Clip to realistic ranges
+    if model_bundle.target in ["points", "goals", "assists"]:
+        lam = np.clip(lam, 0, 5)
+    elif model_bundle.target == "shots_on_goal":
+        lam = np.clip(lam, 0, 15)
+    elif model_bundle.target == "total_goals":
+        lam = np.clip(lam, 0, 12)
+
+
     q10, q90 = zip(*[poisson_quantiles(float(l)) for l in lam]) if len(lam) else ([], [])
 
     out = df_features[["date","game_id","team","opponent","player_id","name"]].copy()

@@ -1,0 +1,129 @@
++--------------------- Traceback (most recent call last) ---------------------+
+| C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\cli\p |
+| redict.py:52 in tomorrow                                                    |
+|                                                                             |
+|    49             return _bundle_from_loaded(d)                             |
+|    50         return trainer(*args, **kwargs)                               |
+|    51                                                                       |
+| >  52     bundle_points  = _load_or_train("lgbm_poisson_points",         tr |
+|    53     bundle_goals   = _load_or_train("lgbm_poisson_goals",          tr |
+|    54     bundle_assists = _load_or_train("lgbm_poisson_assists",        tr |
+|    55     bundle_shots   = _load_or_train("lgbm_poisson_shots_on_goal",  tr |
+|                                                                             |
+| +-------------------------------- locals ---------------------------------+ |
+| |    date = '2025-10-15'                                                  | |
+| | df_feat =       game_id team opponent  ... opp_team_gf_5 opp_team_ga_5  | |
+| |           opp_goalie_ga_smooth                                          | |
+| |           1328    22382   SJ      ANA  ...           9.0           9.0  | |
+| |           0.0                                                           | |
+| |           1327    22382   SJ      ANA  ...           9.0           9.0  | |
+| |           0.0                                                           | |
+| |           1330    22382   SJ      ANA  ...           9.0           9.0  | |
+| |           0.0                                                           | |
+| |           1333    22382   SJ      ANA  ...           9.0           9.0  | |
+| |           0.0                                                           | |
+| |           1331    22382   SJ      ANA  ...           9.0           9.0  | |
+| |           0.0                                                           | |
+| |           ...       ...  ...      ...  ...           ...           ...  | |
+| |           ...                                                           | |
+| |           76929   23953  CGY      WPG  ...          11.0          11.0  | |
+| |           0.8                                                           | |
+| |           76924   23953  CGY      WPG  ...          11.0          11.0  | |
+| |           0.8                                                           | |
+| |           76916   23953  CGY      WPG  ...          11.0          11.0  | |
+| |           0.8                                                           | |
+| |           76925   23953  CGY      WPG  ...          11.0          11.0  | |
+| |           0.0                                                           | |
+| |           76917   23953  CGY      WPG  ...          11.0          11.0  | |
+| |           0.0                                                           | |
+| |                                                                         | |
+| |           [77475 rows x 27 columns]                                     | |
+| |  df_ytd =       game_id team  ... power_play_goals                      | |
+| |           goal_tending_goals_against                                    | |
+| |           0       22372  CBJ  ...              0.0                      | |
+| |           0.0                                                           | |
+| |           1       22372  CBJ  ...              0.0                      | |
+| |           0.0                                                           | |
+| |           2       22372  CBJ  ...              0.0                      | |
+| |           0.0                                                           | |
+| |           3       22372  CBJ  ...              0.0                      | |
+| |           0.0                                                           | |
+| |           4       22372  CBJ  ...              0.0                      | |
+| |           0.0                                                           | |
+| |           ...       ...  ...  ...              ...                      | |
+| |           ...                                                           | |
+| |           77470   23945  UTA  ...              0.0                      | |
+| |           0.0                                                           | |
+| |           77471   23945  UTA  ...              0.0                      | |
+| |           0.0                                                           | |
+| |           77472   23945  UTA  ...              0.0                      | |
+| |           0.0                                                           | |
+| |           77473   23945  UTA  ...              0.0                      | |
+| |           0.0                                                           | |
+| |           77474   23945  UTA  ...              0.0                      | |
+| |           4.0                                                           | |
+| |                                                                         | |
+| |           [77475 rows x 15 columns]                                     | |
+| |  run_id = '0b81d2fc-b996-43e2-81ea-41aae43381d9'                        | |
+| | ytd_csv = 'data/NHL_2023_24.csv'                                        | |
+| +-------------------------------------------------------------------------+ |
+|                                                                             |
+| C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\cli\p |
+| redict.py:50 in _load_or_train                                              |
+|                                                                             |
+|    47                 # (Optional) log a warning here                       |
+|    48                 return trainer(*args, **kwargs)                       |
+|    49             return _bundle_from_loaded(d)                             |
+| >  50         return trainer(*args, **kwargs)                               |
+|    51                                                                       |
+|    52     bundle_points  = _load_or_train("lgbm_poisson_points",         tr |
+|    53     bundle_goals   = _load_or_train("lgbm_poisson_goals",          tr |
+|                                                                             |
+| +-------------------------------- locals ---------------------------------+ |
+| |     args = (                                                            | |
+| |                      game_id team opponent  ... opp_team_gf_5           | |
+| |            opp_team_ga_5 opp_goalie_ga_smooth                           | |
+| |            1328    22382   SJ      ANA  ...           9.0           9.0 | |
+| |            0.0                                                          | |
+| |            1327    22382   SJ      ANA  ...           9.0           9.0 | |
+| |            0.0                                                          | |
+| |            1330    22382   SJ      ANA  ...           9.0           9.0 | |
+| |            0.0                                                          | |
+| |            1333    22382   SJ      ANA  ...           9.0           9.0 | |
+| |            0.0                                                          | |
+| |            1331    22382   SJ      ANA  ...           9.0           9.0 | |
+| |            0.0                                                          | |
+| |            ...       ...  ...      ...  ...           ...           ... | |
+| |            ...                                                          | |
+| |            76929   23953  CGY      WPG  ...          11.0          11.0 | |
+| |            0.8                                                          | |
+| |            76924   23953  CGY      WPG  ...          11.0          11.0 | |
+| |            0.8                                                          | |
+| |            76916   23953  CGY      WPG  ...          11.0          11.0 | |
+| |            0.8                                                          | |
+| |            76925   23953  CGY      WPG  ...          11.0          11.0 | |
+| |            0.0                                                          | |
+| |            76917   23953  CGY      WPG  ...          11.0          11.0 | |
+| |            0.0                                                          | |
+| |                                                                         | |
+| |            [77475 rows x 27 columns],                                   | |
+| |            )                                                            | |
+| | features = [                                                            | |
+| |                'home_or_away',                                          | |
+| |                'minutes',                                               | |
+| |                'days_off',                                              | |
+| |                'rolling_points_5',                                      | |
+| |                'rolling_goals_5',                                       | |
+| |                'rolling_assists_5',                                     | |
+| |                'rolling_shots_on_goal_5',                               | |
+| |                'opp_goalie_ga_smooth',                                  | |
+| |                'team_gf_5',                                             | |
+| |                'team_ga_5'                                              | |
+| |            ]                                                            | |
+| |   kwargs = {'target': 'points'}                                         | |
+| |     path = None                                                         | |
+| |   prefix = 'lgbm_poisson_points'                                        | |
+| +-------------------------------------------------------------------------+ |
++-----------------------------------------------------------------------------+
+TypeError: train_player_count() missing 1 required positional argument: 
+'features'

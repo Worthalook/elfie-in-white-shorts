@@ -33,22 +33,30 @@ def tomorrow(
 
     def _bundle_from_loaded(d):
         class B: pass
-        b = B(); b.model = d["model"]; b.features = d["features"]; b.target = d["target"]; b.model_name = d["model_name"]; b.model_version = d["model_version"]; return b
-    def _load_or_train(prefix, trainer, *args, **kwargs):
-        path = latest_model_path(prefix)
+        b = B()
+        b.model = d["model"]; b.features = d["features"]; b.target = d["target"]
+        b.model_name = d["model_name"]; b.model_version = d["model_version"]
+        return b
+
+    def _load_or_train(prefix, trainer, features, *args, **kwargs):
+        path = latest_model_path(prefix, features)
         if path:
             d = load_model(path)
+            # Guard: if features differ, retrain to current features
+            if d["features"] != features:
+                # (Optional) log a warning here
+                return trainer(*args, **kwargs)
             return _bundle_from_loaded(d)
         return trainer(*args, **kwargs)
 
-    bundle_points  = _load_or_train("lgbm_poisson_points",         train_player_count, df_feat, PLAYER_FEATURES, target="points")
-    bundle_goals   = _load_or_train("lgbm_poisson_goals",          train_player_count, df_feat, PLAYER_FEATURES, target="goals")
-    bundle_assists = _load_or_train("lgbm_poisson_assists",        train_player_count, df_feat, PLAYER_FEATURES, target="assists")
-    bundle_shots   = _load_or_train("lgbm_poisson_shots_on_goal",  train_player_count, df_feat, PLAYER_FEATURES, target="shots_on_goal")
+    bundle_points  = _load_or_train("lgbm_poisson_points",         train_player_count, PLAYER_FEATURES, df_feat, target="points")
+    bundle_goals   = _load_or_train("lgbm_poisson_goals",          train_player_count, PLAYER_FEATURES, df_feat, target="goals")
+    bundle_assists = _load_or_train("lgbm_poisson_assists",        train_player_count, PLAYER_FEATURES, df_feat, target="assists")
+    bundle_shots   = _load_or_train("lgbm_poisson_shots_on_goal",  train_player_count, PLAYER_FEATURES, df_feat, target="shots_on_goal")
 
     team = df_feat.groupby(["date","game_id","team","opponent","home_or_away"], as_index=False)["points"].sum()
     team = team.rename(columns={"points":"team_goals"})
-    bundle_team_home = _load_or_train("lgbm_poisson_team_goals", train_team_goals, team, TEAM_FEATURES, target="team_goals")
+    bundle_team_home = _load_or_train("lgbm_poisson_team_goals", train_team_goals, TEAM_FEATURES, team, target="team_goals")
     bundle_team_away = bundle_team_home
 
     slate = fetch_player_projections_by_date(date) if date else None
@@ -100,21 +108,39 @@ def tomorrow(
 
     # IMPORTANT: ensure you have only one goalie feature name; pick ONE and use it everywhere.
     # e.g., use "opp_goalie_ga_smooth" consistently:
-    team_feats = team_feats.drop(columns=[c for c in ["goal_tending_goals_against"] if c in team_feats])
+    #team_feats = team_feats.drop(columns=[c for c in ["goal_tending_goals_against"] if c in team_feats])
 
     team_df = team_target.merge(team_feats, on=keys, how="left")
 
-    # the rows you pass forward can keep identifiers + features (no duplicates)
-    team_rows = team_df[keys + TEAM_FEATURES].drop_duplicates()
+    # Use identifiers for output, but DO NOT feed them to the model
+    id_cols = ["date","game_id","team","opponent"]
+    team_rows = team_df[id_cols + TEAM_FEATURES].drop_duplicates()
 
-    missing = [c for c in TEAM_FEATURES if c not in team_rows.columns]
+    # (Optional) sanity: match features exactly before calling predictor
+    missing = [c for c in bundle_team_home.features if c not in team_rows.columns]
     if missing:
-        raise KeyError(f"Missing {missing} in team_rows (predict)")
+        raise KeyError(f"team_rows missing {missing}. Got: {team_rows.columns.tolist()}")
 
     preds_totals = predict_match_totals(bundle_team_home, bundle_team_away, team_rows, run_id)
 
 
     all_preds = pd.concat([preds_points, preds_goals, preds_assists, preds_shots, preds_totals], ignore_index=True)
+    
+    def _normalize_target_col(df):
+        def norm(x):
+            if hasattr(x, "value"):
+                x = x.value
+            s = str(x)
+            if s.startswith("Target."):
+                s = s.split(".", 1)[1]
+            return s.lower()
+        df["target"] = df["target"].apply(norm)
+        return df
+
+    all_preds = pd.concat([preds_points, preds_goals, preds_assists, preds_shots, preds_totals], ignore_index=True)
+    all_preds = _normalize_target_col(all_preds)  # ← normalize just in case
+
+    
     append("fact_predictions", all_preds)
 
     os.makedirs(settings.PARQUET_DIR, exist_ok=True)

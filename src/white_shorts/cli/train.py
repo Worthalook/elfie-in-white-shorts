@@ -68,7 +68,7 @@ def all(csv_path: str = typer.Option("data/NHL_2023_24.csv", help="Path to last 
     missing = [c for c in TEAM_FEATURES + ["team_goals"] if c not in team_df.columns]
     if missing:
         raise KeyError(f"Missing {missing} in team_df (train)")
-
+    print(df_feat[["points","goals","assists","shots_on_goal"]].describe())
     bteam = train_team_goals(team_df, TEAM_FEATURES, target="team_goals", version=settings.MODEL_VERSION_TAG)
     path_team = save_model(bteam)
     typer.echo(f"Trained & saved team goals model → {path_team}")

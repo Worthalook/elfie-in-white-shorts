@@ -5,14 +5,22 @@ import os
 from pathlib import Path
 import joblib
 from .trainers import ModelBundle
+import hashlib
 
 # Normalize WS_MODELS_DIR (handles backslashes, trailing slashes, etc.)
 DEFAULT_DIR = Path(os.getenv("WS_MODELS_DIR", "models")).expanduser()
 
+def feature_sig(features: list[str]) -> str:
+    # order matters: the training order reflects in the model
+    s = "|".join(features)
+    return hashlib.sha1(s.encode("utf-8")).hexdigest()[:8]
+
+
 def save_model(bundle: ModelBundle, name: str | None = None, dir: Path | None = None) -> str:
     dir = Path(dir or DEFAULT_DIR)
     dir.mkdir(parents=True, exist_ok=True)
-    fname = name or f"{bundle.model_name}_{bundle.model_version}.joblib"
+    sig = feature_sig(bundle.features)
+    fname = name or f"{bundle.model_name}_{sig}_{bundle.model_version}.joblib"
     path = dir / fname
     joblib.dump({
         "model": bundle.model,
@@ -34,7 +42,13 @@ def load_model(name_or_path: str, dir: Path | None = None) -> dict:
     base = Path(dir or DEFAULT_DIR)     # filename only -> join with models dir
     return joblib.load(base / name_or_path)
 
-def latest_model_path(prefix: str, dir: Path | None = None) -> str | None:
+def latest_model_path(prefix: str, features: list[str], dir: Path | None = None) -> str | None:
     dir = Path(dir or DEFAULT_DIR)
-    candidates = sorted(dir.glob(f"{prefix}*.joblib"), key=lambda p: p.stat().st_mtime, reverse=True)
-    return str(candidates[0]) if candidates else None
+    sig = feature_sig(features)
+    # Prefer exact sig
+    candidates = sorted(dir.glob(f"{prefix}_{sig}_*.joblib"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if candidates:
+        return str(candidates[0])
+    # Fallback to any prefix (kept for dev), but this may be mismatched
+    fallback = sorted(dir.glob(f"{prefix}_*.joblib"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return str(fallback[0]) if fallback else None

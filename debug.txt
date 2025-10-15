@@ -2,29 +2,55 @@ C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\data\load_
   df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
 +--------------------- Traceback (most recent call last) ---------------------+
 | C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\cli\p |
-| redict.py:109 in tomorrow                                                   |
+| redict.py:128 in tomorrow                                                   |
 |                                                                             |
-|   106     team_df = team_target.merge(team_feats, on=keys, how="left")      |
-|   107                                                                       |
-|   108     # the rows you pass forward can keep identifiers + features (no d |
-| > 109     team_rows = team_df[keys + TEAM_FEATURES].drop_duplicates()       |
-|   110                                                                       |
-|   111     missing = [c for c in TEAM_FEATURES if c not in team_rows.columns |
-|   112     if missing:                                                       |
+|   125                                                                       |
+|   126                                                                       |
+|   127     all_preds = pd.concat([preds_points, preds_goals, preds_assists,  |
+| > 128     append("fact_predictions", all_preds)                             |
+|   129                                                                       |
+|   130     os.makedirs(settings.PARQUET_DIR, exist_ok=True)                  |
+|   131     out_csv = f"{settings.PARQUET_DIR}/predictions_{run_id}.csv"      |
 |                                                                             |
 | +-------------------------------- locals ---------------------------------+ |
+| |        all_preds =            date  ...                                 | |
+| |                    created_ts                                           | |
+| |                    0    2025-10-14  ...        2025-10-15               | |
+| |                    11:11:27.053280                                      | |
+| |                    1    2025-10-14  ...        2025-10-15               | |
+| |                    11:11:27.053280                                      | |
+| |                    2    2025-10-14  ...        2025-10-15               | |
+| |                    11:11:27.053280                                      | |
+| |                    3    2025-10-14  ...        2025-10-15               | |
+| |                    11:11:27.053280                                      | |
+| |                    4    2025-10-14  ...        2025-10-15               | |
+| |                    11:11:27.053280                                      | |
+| |                    ...         ...  ...                                 | |
+| |                    ...                                                  | |
+| |                    5812 2025-10-04  ...  2025-10-15                     | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    5813 2025-10-04  ...  2025-10-15                     | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    5814 2025-10-04  ...  2025-10-15                     | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    5815 2025-10-04  ...  2025-10-15                     | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    5816 2025-10-04  ...  2025-10-15                     | |
+| |                    11:11:31.358895+00:00                                | |
+| |                                                                         | |
+| |                    [5817 rows x 16 columns]                             | |
 | |   bundle_assists = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x00000293A50083D0>                        | |
+| |                    object at 0x00000278E712B550>                        | |
 | |     bundle_goals = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x00000293A50C63D0>                        | |
+| |                    object at 0x00000278E6C55C10>                        | |
 | |    bundle_points = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x00000293A5144750>                        | |
+| |                    object at 0x00000278E7030F50>                        | |
 | |     bundle_shots = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x00000293A6455D10>                        | |
+| |                    object at 0x00000278E803E9D0>                        | |
 | | bundle_team_away = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x00000293A63EE350>                        | |
+| |                    object at 0x00000278E80A5CD0>                        | |
 | | bundle_team_home = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x00000293A63EE350>                        | |
+| |                    object at 0x00000278E80A5CD0>                        | |
 | |                c = 'name'                                               | |
 | |             date = '2025-10-14'                                         | |
 | |          df_feat =       game_id team opponent  ... opp_team_gf_5       | |
@@ -92,1065 +118,7 @@ C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\data\load_
 | |                        'rolling_points_5',                              | |
 | |                        ... +6                                           | |
 | |                    ]                                                    | |
-| |             keys = [                                                    | |
-| |                        'date',                                          | |
-| |                        'game_id',                                       | |
-| |                        'team',                                          | |
-| |                        'opponent',                                      | |
-| |                        'home_or_away'                                   | |
-| |                    ]                                                    | |
-| |      player_rows =           date game_id team  ...                     | |
-| |                    opp_goalie_ga_smooth team_gf_5 team_ga_5             | |
-| |                    0   2025-10-14   24022   TB  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    1   2025-10-14   24022   TB  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    2   2025-10-14   24022   TB  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    3   2025-10-14   24022   TB  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    4   2025-10-14   24022   TB  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    ..         ...     ...  ...  ...                     | |
-| |                    ...       ...       ...                              | |
-| |                    654 2025-10-14   24029  PIT  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    655 2025-10-14   24029  PIT  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    656 2025-10-14   24029  PIT  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    657 2025-10-14   24029  PIT  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    658 2025-10-14   24029  PIT  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                                                                         | |
-| |                    [659 rows x 16 columns]                              | |
-| |    preds_assists =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:31:59.399932       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:31:59.399932       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:31:59.399932       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:31:59.399932       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:31:59.399932       | |
-| |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:31:59.399932       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:31:59.399932       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:31:59.399932       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:31:59.399932       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:31:59.399932       | |
-| |                                                                         | |
-| |                    [659 rows x 16 columns]                              | |
-| |      preds_goals =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:31:58.643727       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:31:58.643727       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:31:58.643727       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:31:58.643727       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:31:58.643727       | |
-| |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:31:58.643727       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:31:58.643727       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:31:58.643727       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:31:58.643727       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:31:58.643727       | |
-| |                                                                         | |
-| |                    [659 rows x 16 columns]                              | |
-| |     preds_points =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:31:57.851611       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:31:57.851611       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:31:57.851611       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:31:57.851611       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:31:57.851611       | |
-| |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:31:57.851611       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:31:57.851611       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:31:57.851611       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:31:57.851611       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:31:57.851611       | |
-| |                                                                         | |
-| |                    [659 rows x 16 columns]                              | |
-| |      preds_shots =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:32:00.185920       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:32:00.185920       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:32:00.185920       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:32:00.185920       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:32:00.185920       | |
-| |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:32:00.185920       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:32:00.185920       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:32:00.185920       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:32:00.185920       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:32:00.185920       | |
-| |                                                                         | |
-| |                    [659 rows x 16 columns]                              | |
-| |           run_id = 'd6f34c12-215a-4584-983b-8d45c247b99d'               | |
-| |            slate =           date game_id team opponent player_id       | |
-| |                    name                                                 | |
-| |                    0   2025-10-14   24022   TB      WAS  30000428       | |
-| |                    Oliver Bjorkstrand                                   | |
-| |                    1   2025-10-14   24022   TB      WAS  30000477       | |
-| |                    Nick Paul                                            | |
-| |                    2   2025-10-14   24022   TB      WAS  30000502       | |
-| |                    Zemgus Girgensons                                    | |
-| |                    3   2025-10-14   24022   TB      WAS  30000737       | |
-| |                    Victor Hedman                                        | |
-| |                    4   2025-10-14   24022   TB      WAS  30000742       | |
-| |                    Brayden Point                                        | |
-| |                    ..         ...     ...  ...      ...       ...       | |
-| |                    ...                                                  | |
-| |                    654 2025-10-14   24029  PIT      ANA  30000806       | |
-| |                    Matt Dumba                                           | |
-| |                    655 2025-10-14   24029  PIT      ANA  30000848       | |
-| |                    Anthony Mantha                                       | |
-| |                    656 2025-10-14   24029  PIT      ANA  30000888       | |
-| |                    Rickard Rakell                                       | |
-| |                    657 2025-10-14   24029  PIT      ANA  30001100       | |
-| |                    Bryan Rust                                           | |
-| |                    658 2025-10-14   24029  PIT      ANA  30001235       | |
-| |                    Noel Acciari                                         | |
-| |                                                                         | |
-| |                    [659 rows x 6 columns]                               | |
-| |             team =            date game_id team opponent  home_or_away  | |
-| |                    team_goals                                           | |
-| |                    0    2024-09-25   22370   NJ      WAS             1  | |
-| |                    8.0                                                  | |
-| |                    1    2024-09-25   22370  WAS       NJ             0  | |
-| |                    14.0                                                 | |
-| |                    2    2024-09-25   22371  FLA       TB             0  | |
-| |                    16.0                                                 | |
-| |                    3    2024-09-25   22371   TB      FLA             1  | |
-| |                    20.0                                                 | |
-| |                    4    2024-09-25   22372  CBJ      STL             1  | |
-| |                    8.0                                                  | |
-| |                    ...         ...     ...  ...      ...           ...  | |
-| |                    ...                                                  | |
-| |                    3176 2025-10-04   23944  TOR      DET             0  | |
-| |                    12.0                                                 | |
-| |                    3177 2025-10-04   23945   SJ      UTA             0  | |
-| |                    11.0                                                 | |
-| |                    3178 2025-10-04   23945  UTA       SJ             1  | |
-| |                    16.0                                                 | |
-| |                    3179 2025-10-04   23971  CHI      STL             1  | |
-| |                    0.0                                                  | |
-| |                    3180 2025-10-04   23971  STL      CHI             0  | |
-| |                    12.0                                                 | |
-| |                                                                         | |
-| |                    [3181 rows x 6 columns]                              | |
-| |          team_df =            date game_id team  ... team_ga_5          | |
-| |                    opp_team_gf_5  opp_team_ga_5                         | |
-| |                    0    2024-09-25   22370   NJ  ...       8.0          | |
-| |                    8.0            8.0                                   | |
-| |                    1    2024-09-25   22370  WAS  ...      14.0          | |
-| |                    14.0           14.0                                  | |
-| |                    2    2024-09-25   22371  FLA  ...      16.0          | |
-| |                    16.0           16.0                                  | |
-| |                    3    2024-09-25   22371   TB  ...      20.0          | |
-| |                    20.0           20.0                                  | |
-| |                    4    2024-09-25   22372  CBJ  ...       8.0          | |
-| |                    8.0            8.0                                   | |
-| |                    ...         ...     ...  ...  ...       ...          | |
-| |                    ...            ...                                   | |
-| |                    3176 2025-10-04   23944  TOR  ...      11.1          | |
-| |                    11.1           11.1                                  | |
-| |                    3177 2025-10-04   23945   SJ  ...      10.9          | |
-| |                    10.9           10.9                                  | |
-| |                    3178 2025-10-04   23945  UTA  ...      15.0          | |
-| |                    15.0           15.0                                  | |
-| |                    3179 2025-10-04   23971  CHI  ...       0.6          | |
-| |                    0.6            0.6                                   | |
-| |                    3180 2025-10-04   23971  STL  ...      12.8          | |
-| |                    12.8           12.8                                  | |
-| |                                                                         | |
-| |                    [3181 rows x 11 columns]                             | |
-| |       team_feats =            date game_id team  ... team_ga_5          | |
-| |                    opp_team_gf_5  opp_team_ga_5                         | |
-| |                    0    2024-09-25   22370   NJ  ...       8.0          | |
-| |                    8.0            8.0                                   | |
-| |                    1    2024-09-25   22370  WAS  ...      14.0          | |
-| |                    14.0           14.0                                  | |
-| |                    2    2024-09-25   22371  FLA  ...      16.0          | |
-| |                    16.0           16.0                                  | |
-| |                    3    2024-09-25   22371   TB  ...      20.0          | |
-| |                    20.0           20.0                                  | |
-| |                    4    2024-09-25   22372  CBJ  ...       8.0          | |
-| |                    8.0            8.0                                   | |
-| |                    ...         ...     ...  ...  ...       ...          | |
-| |                    ...            ...                                   | |
-| |                    3176 2025-10-04   23944  TOR  ...      11.1          | |
-| |                    11.1           11.1                                  | |
-| |                    3177 2025-10-04   23945   SJ  ...      10.9          | |
-| |                    10.9           10.9                                  | |
-| |                    3178 2025-10-04   23945  UTA  ...      15.0          | |
-| |                    15.0           15.0                                  | |
-| |                    3179 2025-10-04   23971  CHI  ...       0.6          | |
-| |                    0.6            0.6                                   | |
-| |                    3180 2025-10-04   23971  STL  ...      12.8          | |
-| |                    12.8           12.8                                  | |
-| |                                                                         | |
-| |                    [3181 rows x 10 columns]                             | |
-| |      team_target =            date game_id team opponent  home_or_away  | |
-| |                    team_goals                                           | |
-| |                    0    2024-09-25   22370   NJ      WAS             1  | |
-| |                    8.0                                                  | |
-| |                    1    2024-09-25   22370  WAS       NJ             0  | |
-| |                    14.0                                                 | |
-| |                    2    2024-09-25   22371  FLA       TB             0  | |
-| |                    16.0                                                 | |
-| |                    3    2024-09-25   22371   TB      FLA             1  | |
-| |                    20.0                                                 | |
-| |                    4    2024-09-25   22372  CBJ      STL             1  | |
-| |                    8.0                                                  | |
-| |                    ...         ...     ...  ...      ...           ...  | |
-| |                    ...                                                  | |
-| |                    3176 2025-10-04   23944  TOR      DET             0  | |
-| |                    12.0                                                 | |
-| |                    3177 2025-10-04   23945   SJ      UTA             0  | |
-| |                    11.0                                                 | |
-| |                    3178 2025-10-04   23945  UTA       SJ             1  | |
-| |                    16.0                                                 | |
-| |                    3179 2025-10-04   23971  CHI      STL             1  | |
-| |                    0.0                                                  | |
-| |                    3180 2025-10-04   23971  STL      CHI             0  | |
-| |                    12.0                                                 | |
-| |                                                                         | |
-| |                    [3181 rows x 6 columns]                              | |
-| |          ytd_csv = 'data/NHL_2023_24.csv'                               | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \pandas\core\frame.py:4119 in __getitem__                                   |
-|                                                                             |
-|    4116         else:                                                       |
-|    4117             if is_iterator(key):                                    |
-|    4118                 key = list(key)                                     |
-| >  4119             indexer = self.columns._get_indexer_strict(key, "column |
-|    4120                                                                     |
-|    4121         # take() does not accept boolean indexers                   |
-|    4122         if getattr(indexer, "dtype", None) == bool:                 |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| | is_single_key = False                                                   | |
-| |           key = [                                                       | |
-| |                     'date',                                             | |
-| |                     'game_id',                                          | |
-| |                     'team',                                             | |
-| |                     'opponent',                                         | |
-| |                     'home_or_away',                                     | |
-| |                     'home_or_away',                                     | |
-| |                     'days_off_team',                                    | |
-| |                     'team_gf_5',                                        | |
-| |                     'team_ga_5',                                        | |
-| |                     'opp_team_gf_5',                                    | |
-| |                     ... +2                                              | |
-| |                 ]                                                       | |
-| |          self =            date game_id team  ... team_ga_5             | |
-| |                 opp_team_gf_5  opp_team_ga_5                            | |
-| |                 0    2024-09-25   22370   NJ  ...       8.0             | |
-| |                 8.0            8.0                                      | |
-| |                 1    2024-09-25   22370  WAS  ...      14.0             | |
-| |                 14.0           14.0                                     | |
-| |                 2    2024-09-25   22371  FLA  ...      16.0             | |
-| |                 16.0           16.0                                     | |
-| |                 3    2024-09-25   22371   TB  ...      20.0             | |
-| |                 20.0           20.0                                     | |
-| |                 4    2024-09-25   22372  CBJ  ...       8.0             | |
-| |                 8.0            8.0                                      | |
-| |                 ...         ...     ...  ...  ...       ...             | |
-| |                 ...            ...                                      | |
-| |                 3176 2025-10-04   23944  TOR  ...      11.1             | |
-| |                 11.1           11.1                                     | |
-| |                 3177 2025-10-04   23945   SJ  ...      10.9             | |
-| |                 10.9           10.9                                     | |
-| |                 3178 2025-10-04   23945  UTA  ...      15.0             | |
-| |                 15.0           15.0                                     | |
-| |                 3179 2025-10-04   23971  CHI  ...       0.6             | |
-| |                 0.6            0.6                                      | |
-| |                 3180 2025-10-04   23971  STL  ...      12.8             | |
-| |                 12.8           12.8                                     | |
-| |                                                                         | |
-| |                 [3181 rows x 11 columns]                                | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \pandas\core\indexes\base.py:6212 in _get_indexer_strict                    |
-|                                                                             |
-|   6209         else:                                                        |
-|   6210             keyarr, indexer, new_indexer = self._reindex_non_unique( |
-|   6211                                                                      |
-| > 6212         self._raise_if_missing(keyarr, indexer, axis_name)           |
-|   6213                                                                      |
-|   6214         keyarr = self.take(indexer)                                  |
-|   6215         if isinstance(key, Index):                                   |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| | axis_name = 'columns'                                                   | |
-| |   indexer = array([ 0,  1,  2,  3,  4,  4,  6,  7,  8,  9, 10, -1])     | |
-| |       key = [                                                           | |
-| |                 'date',                                                 | |
-| |                 'game_id',                                              | |
-| |                 'team',                                                 | |
-| |                 'opponent',                                             | |
-| |                 'home_or_away',                                         | |
-| |                 'home_or_away',                                         | |
-| |                 'days_off_team',                                        | |
-| |                 'team_gf_5',                                            | |
-| |                 'team_ga_5',                                            | |
-| |                 'opp_team_gf_5',                                        | |
-| |                 ... +2                                                  | |
-| |             ]                                                           | |
-| |    keyarr = Index(['date', 'game_id', 'team', 'opponent',               | |
-| |             'home_or_away', 'home_or_away',                             | |
-| |                    'days_off_team', 'team_gf_5', 'team_ga_5',           | |
-| |             'opp_team_gf_5',                                            | |
-| |                    'opp_team_ga_5', 'opp_goalie_ga_smooth'],            | |
-| |                   dtype='object')                                       | |
-| |      self = Index(['date', 'game_id', 'team', 'opponent',               | |
-| |             'home_or_away', 'team_goals',                               | |
-| |                    'days_off_team', 'team_gf_5', 'team_ga_5',           | |
-| |             'opp_team_gf_5',                                            | |
-| |                    'opp_team_ga_5'],                                    | |
-| |                   dtype='object')                                       | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \pandas\core\indexes\base.py:6264 in _raise_if_missing                      |
-|                                                                             |
-|   6261                 raise KeyError(f"None of [{key}] are in the [{axis_n |
-|   6262                                                                      |
-|   6263             not_found = list(ensure_index(key)[missing_mask.nonzero( |
-| > 6264             raise KeyError(f"{not_found} not in index")              |
-|   6265                                                                      |
-|   6266     @overload                                                        |
-|   6267     def _get_indexer_non_comparable(                                 |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |    axis_name = 'columns'                                                | |
-| |      indexer = array([ 0,  1,  2,  3,  4,  4,  6,  7,  8,  9, 10, -1])  | |
-| |          key = Index(['date', 'game_id', 'team', 'opponent',            | |
-| |                'home_or_away', 'home_or_away',                          | |
-| |                       'days_off_team', 'team_gf_5', 'team_ga_5',        | |
-| |                'opp_team_gf_5',                                         | |
-| |                       'opp_team_ga_5', 'opp_goalie_ga_smooth'],         | |
-| |                      dtype='object')                                    | |
-| | missing_mask = array([False, False, False, False, False, False, False,  | |
-| |                False, False,                                            | |
-| |                       False, False,  True])                             | |
-| |     nmissing = np.int64(1)                                              | |
-| |    not_found = ['opp_goalie_ga_smooth']                                 | |
-| |         self = Index(['date', 'game_id', 'team', 'opponent',            | |
-| |                'home_or_away', 'team_goals',                            | |
-| |                       'days_off_team', 'team_gf_5', 'team_ga_5',        | |
-| |                'opp_team_gf_5',                                         | |
-| |                       'opp_team_ga_5'],                                 | |
-| |                      dtype='object')                                    | |
-| +-------------------------------------------------------------------------+ |
-+-----------------------------------------------------------------------------+
-KeyError: "['opp_goalie_ga_smooth'] not in index"
-C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\data\load_ytd.py:9: UserWarning: Parsing dates in %Y-%m-%d format when dayfirst=True was specified. Pass `dayfirst=False` or specify a format to silence this warning.
-  df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
-+--------------------- Traceback (most recent call last) ---------------------+
-| C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\cli\p |
-| redict.py:108 in tomorrow                                                   |
-|                                                                             |
-|   105     team_df = team_target.merge(team_feats, on=keys, how="left")      |
-|   106                                                                       |
-|   107     # the rows you pass forward can keep identifiers + features (no d |
-| > 108     team_rows = team_df[keys + TEAM_FEATURES].drop_duplicates()       |
-|   109                                                                       |
-|   110     missing = [c for c in TEAM_FEATURES if c not in team_rows.columns |
-|   111     if missing:                                                       |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |   bundle_assists = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x000002657526C850>                        | |
-| |     bundle_goals = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x00000265736E6650>                        | |
-| |    bundle_points = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x000002657184B090>                        | |
-| |     bundle_shots = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x000002657526F490>                        | |
-| | bundle_team_away = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x00000265752D5010>                        | |
-| | bundle_team_home = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x00000265752D5010>                        | |
-| |                c = 'name'                                               | |
-| |             date = '2025-10-14'                                         | |
-| |          df_feat =       game_id team opponent  ... opp_team_gf_5       | |
-| |                    opp_team_ga_5 opp_goalie_ga_smooth                   | |
-| |                    1328    22382   SJ      ANA  ...           9.0       | |
-| |                    9.0                  0.0                             | |
-| |                    1327    22382   SJ      ANA  ...           9.0       | |
-| |                    9.0                  0.0                             | |
-| |                    1330    22382   SJ      ANA  ...           9.0       | |
-| |                    9.0                  0.0                             | |
-| |                    1333    22382   SJ      ANA  ...           9.0       | |
-| |                    9.0                  0.0                             | |
-| |                    1331    22382   SJ      ANA  ...           9.0       | |
-| |                    9.0                  0.0                             | |
-| |                    ...       ...  ...      ...  ...           ...       | |
-| |                    ...                  ...                             | |
-| |                    76929   23953  CGY      WPG  ...          11.0       | |
-| |                    11.0                  0.8                            | |
-| |                    76924   23953  CGY      WPG  ...          11.0       | |
-| |                    11.0                  0.8                            | |
-| |                    76916   23953  CGY      WPG  ...          11.0       | |
-| |                    11.0                  0.8                            | |
-| |                    76925   23953  CGY      WPG  ...          11.0       | |
-| |                    11.0                  0.0                            | |
-| |                    76917   23953  CGY      WPG  ...          11.0       | |
-| |                    11.0                  0.0                            | |
-| |                                                                         | |
-| |                    [77475 rows x 27 columns]                            | |
-| |           df_ytd =       game_id team  ... power_play_goals             | |
-| |                    goal_tending_goals_against                           | |
-| |                    0       22372  CBJ  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    1       22372  CBJ  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    2       22372  CBJ  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    3       22372  CBJ  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    4       22372  CBJ  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    ...       ...  ...  ...              ...             | |
-| |                    ...                                                  | |
-| |                    77470   23945  UTA  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    77471   23945  UTA  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    77472   23945  UTA  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    77473   23945  UTA  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    77474   23945  UTA  ...              0.0             | |
-| |                    4.0                                                  | |
-| |                                                                         | |
-| |                    [77475 rows x 15 columns]                            | |
-| |        feat_cols = [                                                    | |
-| |                        'date',                                          | |
-| |                        'game_id',                                       | |
-| |                        'team',                                          | |
-| |                        'opponent',                                      | |
-| |                        'player_id',                                     | |
-| |                        'name',                                          | |
-| |                        'home_or_away',                                  | |
-| |                        'minutes',                                       | |
-| |                        'days_off',                                      | |
-| |                        'rolling_points_5',                              | |
-| |                        ... +6                                           | |
-| |                    ]                                                    | |
-| |             keys = [                                                    | |
-| |                        'date',                                          | |
-| |                        'game_id',                                       | |
-| |                        'team',                                          | |
-| |                        'opponent',                                      | |
-| |                        'home_or_away'                                   | |
-| |                    ]                                                    | |
-| |      player_rows =           date game_id team  ...                     | |
-| |                    opp_goalie_ga_smooth team_gf_5 team_ga_5             | |
-| |                    0   2025-10-14   24022   TB  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    1   2025-10-14   24022   TB  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    2   2025-10-14   24022   TB  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    3   2025-10-14   24022   TB  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    4   2025-10-14   24022   TB  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    ..         ...     ...  ...  ...                     | |
-| |                    ...       ...       ...                              | |
-| |                    654 2025-10-14   24029  PIT  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    655 2025-10-14   24029  PIT  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    656 2025-10-14   24029  PIT  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    657 2025-10-14   24029  PIT  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                    658 2025-10-14   24029  PIT  ...                     | |
-| |                    0.0       0.0       0.0                              | |
-| |                                                                         | |
-| |                    [659 rows x 16 columns]                              | |
-| |    preds_assists =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:38:03.163032       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:38:03.163032       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:38:03.163032       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:38:03.163032       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:38:03.163032       | |
-| |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:38:03.163032       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:38:03.163032       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:38:03.163032       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:38:03.163032       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:38:03.163032       | |
-| |                                                                         | |
-| |                    [659 rows x 16 columns]                              | |
-| |      preds_goals =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:38:02.327026       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:38:02.327026       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:38:02.327026       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:38:02.327026       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:38:02.327026       | |
-| |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:38:02.327026       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:38:02.327026       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:38:02.327026       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:38:02.327026       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:38:02.327026       | |
-| |                                                                         | |
-| |                    [659 rows x 16 columns]                              | |
-| |     preds_points =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:38:01.519720       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:38:01.519720       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:38:01.519720       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:38:01.519720       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:38:01.519720       | |
-| |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:38:01.519720       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:38:01.519720       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:38:01.519720       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:38:01.519720       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:38:01.519720       | |
-| |                                                                         | |
-| |                    [659 rows x 16 columns]                              | |
-| |      preds_shots =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:38:03.974030       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:38:03.974030       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:38:03.974030       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:38:03.974030       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:38:03.974030       | |
-| |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:38:03.974030       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:38:03.974030       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:38:03.974030       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:38:03.974030       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:38:03.974030       | |
-| |                                                                         | |
-| |                    [659 rows x 16 columns]                              | |
-| |           run_id = 'fc0e7f4f-9393-412d-8f8c-a14bfdc719a6'               | |
-| |            slate =           date game_id team opponent player_id       | |
-| |                    name                                                 | |
-| |                    0   2025-10-14   24022   TB      WAS  30000428       | |
-| |                    Oliver Bjorkstrand                                   | |
-| |                    1   2025-10-14   24022   TB      WAS  30000477       | |
-| |                    Nick Paul                                            | |
-| |                    2   2025-10-14   24022   TB      WAS  30000502       | |
-| |                    Zemgus Girgensons                                    | |
-| |                    3   2025-10-14   24022   TB      WAS  30000737       | |
-| |                    Victor Hedman                                        | |
-| |                    4   2025-10-14   24022   TB      WAS  30000742       | |
-| |                    Brayden Point                                        | |
-| |                    ..         ...     ...  ...      ...       ...       | |
-| |                    ...                                                  | |
-| |                    654 2025-10-14   24029  PIT      ANA  30000806       | |
-| |                    Matt Dumba                                           | |
-| |                    655 2025-10-14   24029  PIT      ANA  30000848       | |
-| |                    Anthony Mantha                                       | |
-| |                    656 2025-10-14   24029  PIT      ANA  30000888       | |
-| |                    Rickard Rakell                                       | |
-| |                    657 2025-10-14   24029  PIT      ANA  30001100       | |
-| |                    Bryan Rust                                           | |
-| |                    658 2025-10-14   24029  PIT      ANA  30001235       | |
-| |                    Noel Acciari                                         | |
-| |                                                                         | |
-| |                    [659 rows x 6 columns]                               | |
-| |             team =            date game_id team opponent  home_or_away  | |
-| |                    team_goals                                           | |
-| |                    0    2024-09-25   22370   NJ      WAS             1  | |
-| |                    8.0                                                  | |
-| |                    1    2024-09-25   22370  WAS       NJ             0  | |
-| |                    14.0                                                 | |
-| |                    2    2024-09-25   22371  FLA       TB             0  | |
-| |                    16.0                                                 | |
-| |                    3    2024-09-25   22371   TB      FLA             1  | |
-| |                    20.0                                                 | |
-| |                    4    2024-09-25   22372  CBJ      STL             1  | |
-| |                    8.0                                                  | |
-| |                    ...         ...     ...  ...      ...           ...  | |
-| |                    ...                                                  | |
-| |                    3176 2025-10-04   23944  TOR      DET             0  | |
-| |                    12.0                                                 | |
-| |                    3177 2025-10-04   23945   SJ      UTA             0  | |
-| |                    11.0                                                 | |
-| |                    3178 2025-10-04   23945  UTA       SJ             1  | |
-| |                    16.0                                                 | |
-| |                    3179 2025-10-04   23971  CHI      STL             1  | |
-| |                    0.0                                                  | |
-| |                    3180 2025-10-04   23971  STL      CHI             0  | |
-| |                    12.0                                                 | |
-| |                                                                         | |
-| |                    [3181 rows x 6 columns]                              | |
-| |          team_df =            date game_id team  ... team_ga_5          | |
-| |                    opp_team_gf_5  opp_team_ga_5                         | |
-| |                    0    2024-09-25   22370   NJ  ...       8.0          | |
-| |                    8.0            8.0                                   | |
-| |                    1    2024-09-25   22370  WAS  ...      14.0          | |
-| |                    14.0           14.0                                  | |
-| |                    2    2024-09-25   22371  FLA  ...      16.0          | |
-| |                    16.0           16.0                                  | |
-| |                    3    2024-09-25   22371   TB  ...      20.0          | |
-| |                    20.0           20.0                                  | |
-| |                    4    2024-09-25   22372  CBJ  ...       8.0          | |
-| |                    8.0            8.0                                   | |
-| |                    ...         ...     ...  ...  ...       ...          | |
-| |                    ...            ...                                   | |
-| |                    3176 2025-10-04   23944  TOR  ...      11.1          | |
-| |                    11.1           11.1                                  | |
-| |                    3177 2025-10-04   23945   SJ  ...      10.9          | |
-| |                    10.9           10.9                                  | |
-| |                    3178 2025-10-04   23945  UTA  ...      15.0          | |
-| |                    15.0           15.0                                  | |
-| |                    3179 2025-10-04   23971  CHI  ...       0.6          | |
-| |                    0.6            0.6                                   | |
-| |                    3180 2025-10-04   23971  STL  ...      12.8          | |
-| |                    12.8           12.8                                  | |
-| |                                                                         | |
-| |                    [3181 rows x 11 columns]                             | |
-| |       team_feats =            date game_id team  ... team_ga_5          | |
-| |                    opp_team_gf_5  opp_team_ga_5                         | |
-| |                    0    2024-09-25   22370   NJ  ...       8.0          | |
-| |                    8.0            8.0                                   | |
-| |                    1    2024-09-25   22370  WAS  ...      14.0          | |
-| |                    14.0           14.0                                  | |
-| |                    2    2024-09-25   22371  FLA  ...      16.0          | |
-| |                    16.0           16.0                                  | |
-| |                    3    2024-09-25   22371   TB  ...      20.0          | |
-| |                    20.0           20.0                                  | |
-| |                    4    2024-09-25   22372  CBJ  ...       8.0          | |
-| |                    8.0            8.0                                   | |
-| |                    ...         ...     ...  ...  ...       ...          | |
-| |                    ...            ...                                   | |
-| |                    3176 2025-10-04   23944  TOR  ...      11.1          | |
-| |                    11.1           11.1                                  | |
-| |                    3177 2025-10-04   23945   SJ  ...      10.9          | |
-| |                    10.9           10.9                                  | |
-| |                    3178 2025-10-04   23945  UTA  ...      15.0          | |
-| |                    15.0           15.0                                  | |
-| |                    3179 2025-10-04   23971  CHI  ...       0.6          | |
-| |                    0.6            0.6                                   | |
-| |                    3180 2025-10-04   23971  STL  ...      12.8          | |
-| |                    12.8           12.8                                  | |
-| |                                                                         | |
-| |                    [3181 rows x 10 columns]                             | |
-| |      team_target =            date game_id team opponent  home_or_away  | |
-| |                    team_goals                                           | |
-| |                    0    2024-09-25   22370   NJ      WAS             1  | |
-| |                    8.0                                                  | |
-| |                    1    2024-09-25   22370  WAS       NJ             0  | |
-| |                    14.0                                                 | |
-| |                    2    2024-09-25   22371  FLA       TB             0  | |
-| |                    16.0                                                 | |
-| |                    3    2024-09-25   22371   TB      FLA             1  | |
-| |                    20.0                                                 | |
-| |                    4    2024-09-25   22372  CBJ      STL             1  | |
-| |                    8.0                                                  | |
-| |                    ...         ...     ...  ...      ...           ...  | |
-| |                    ...                                                  | |
-| |                    3176 2025-10-04   23944  TOR      DET             0  | |
-| |                    12.0                                                 | |
-| |                    3177 2025-10-04   23945   SJ      UTA             0  | |
-| |                    11.0                                                 | |
-| |                    3178 2025-10-04   23945  UTA       SJ             1  | |
-| |                    16.0                                                 | |
-| |                    3179 2025-10-04   23971  CHI      STL             1  | |
-| |                    0.0                                                  | |
-| |                    3180 2025-10-04   23971  STL      CHI             0  | |
-| |                    12.0                                                 | |
-| |                                                                         | |
-| |                    [3181 rows x 6 columns]                              | |
-| |          ytd_csv = 'data/NHL_2023_24.csv'                               | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \pandas\core\frame.py:4119 in __getitem__                                   |
-|                                                                             |
-|    4116         else:                                                       |
-|    4117             if is_iterator(key):                                    |
-|    4118                 key = list(key)                                     |
-| >  4119             indexer = self.columns._get_indexer_strict(key, "column |
-|    4120                                                                     |
-|    4121         # take() does not accept boolean indexers                   |
-|    4122         if getattr(indexer, "dtype", None) == bool:                 |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| | is_single_key = False                                                   | |
-| |           key = [                                                       | |
-| |                     'date',                                             | |
-| |                     'game_id',                                          | |
-| |                     'team',                                             | |
-| |                     'opponent',                                         | |
-| |                     'home_or_away',                                     | |
-| |                     'home_or_away',                                     | |
-| |                     'days_off_team',                                    | |
-| |                     'team_gf_5',                                        | |
-| |                     'team_ga_5',                                        | |
-| |                     'opp_team_gf_5',                                    | |
-| |                     ... +2                                              | |
-| |                 ]                                                       | |
-| |          self =            date game_id team  ... team_ga_5             | |
-| |                 opp_team_gf_5  opp_team_ga_5                            | |
-| |                 0    2024-09-25   22370   NJ  ...       8.0             | |
-| |                 8.0            8.0                                      | |
-| |                 1    2024-09-25   22370  WAS  ...      14.0             | |
-| |                 14.0           14.0                                     | |
-| |                 2    2024-09-25   22371  FLA  ...      16.0             | |
-| |                 16.0           16.0                                     | |
-| |                 3    2024-09-25   22371   TB  ...      20.0             | |
-| |                 20.0           20.0                                     | |
-| |                 4    2024-09-25   22372  CBJ  ...       8.0             | |
-| |                 8.0            8.0                                      | |
-| |                 ...         ...     ...  ...  ...       ...             | |
-| |                 ...            ...                                      | |
-| |                 3176 2025-10-04   23944  TOR  ...      11.1             | |
-| |                 11.1           11.1                                     | |
-| |                 3177 2025-10-04   23945   SJ  ...      10.9             | |
-| |                 10.9           10.9                                     | |
-| |                 3178 2025-10-04   23945  UTA  ...      15.0             | |
-| |                 15.0           15.0                                     | |
-| |                 3179 2025-10-04   23971  CHI  ...       0.6             | |
-| |                 0.6            0.6                                      | |
-| |                 3180 2025-10-04   23971  STL  ...      12.8             | |
-| |                 12.8           12.8                                     | |
-| |                                                                         | |
-| |                 [3181 rows x 11 columns]                                | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \pandas\core\indexes\base.py:6212 in _get_indexer_strict                    |
-|                                                                             |
-|   6209         else:                                                        |
-|   6210             keyarr, indexer, new_indexer = self._reindex_non_unique( |
-|   6211                                                                      |
-| > 6212         self._raise_if_missing(keyarr, indexer, axis_name)           |
-|   6213                                                                      |
-|   6214         keyarr = self.take(indexer)                                  |
-|   6215         if isinstance(key, Index):                                   |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| | axis_name = 'columns'                                                   | |
-| |   indexer = array([ 0,  1,  2,  3,  4,  4,  6,  7,  8,  9, 10, -1])     | |
-| |       key = [                                                           | |
-| |                 'date',                                                 | |
-| |                 'game_id',                                              | |
-| |                 'team',                                                 | |
-| |                 'opponent',                                             | |
-| |                 'home_or_away',                                         | |
-| |                 'home_or_away',                                         | |
-| |                 'days_off_team',                                        | |
-| |                 'team_gf_5',                                            | |
-| |                 'team_ga_5',                                            | |
-| |                 'opp_team_gf_5',                                        | |
-| |                 ... +2                                                  | |
-| |             ]                                                           | |
-| |    keyarr = Index(['date', 'game_id', 'team', 'opponent',               | |
-| |             'home_or_away', 'home_or_away',                             | |
-| |                    'days_off_team', 'team_gf_5', 'team_ga_5',           | |
-| |             'opp_team_gf_5',                                            | |
-| |                    'opp_team_ga_5', 'opp_goalie_ga_smooth'],            | |
-| |                   dtype='object')                                       | |
-| |      self = Index(['date', 'game_id', 'team', 'opponent',               | |
-| |             'home_or_away', 'team_goals',                               | |
-| |                    'days_off_team', 'team_gf_5', 'team_ga_5',           | |
-| |             'opp_team_gf_5',                                            | |
-| |                    'opp_team_ga_5'],                                    | |
-| |                   dtype='object')                                       | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \pandas\core\indexes\base.py:6264 in _raise_if_missing                      |
-|                                                                             |
-|   6261                 raise KeyError(f"None of [{key}] are in the [{axis_n |
-|   6262                                                                      |
-|   6263             not_found = list(ensure_index(key)[missing_mask.nonzero( |
-| > 6264             raise KeyError(f"{not_found} not in index")              |
-|   6265                                                                      |
-|   6266     @overload                                                        |
-|   6267     def _get_indexer_non_comparable(                                 |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |    axis_name = 'columns'                                                | |
-| |      indexer = array([ 0,  1,  2,  3,  4,  4,  6,  7,  8,  9, 10, -1])  | |
-| |          key = Index(['date', 'game_id', 'team', 'opponent',            | |
-| |                'home_or_away', 'home_or_away',                          | |
-| |                       'days_off_team', 'team_gf_5', 'team_ga_5',        | |
-| |                'opp_team_gf_5',                                         | |
-| |                       'opp_team_ga_5', 'opp_goalie_ga_smooth'],         | |
-| |                      dtype='object')                                    | |
-| | missing_mask = array([False, False, False, False, False, False, False,  | |
-| |                False, False,                                            | |
-| |                       False, False,  True])                             | |
-| |     nmissing = np.int64(1)                                              | |
-| |    not_found = ['opp_goalie_ga_smooth']                                 | |
-| |         self = Index(['date', 'game_id', 'team', 'opponent',            | |
-| |                'home_or_away', 'team_goals',                            | |
-| |                       'days_off_team', 'team_gf_5', 'team_ga_5',        | |
-| |                'opp_team_gf_5',                                         | |
-| |                       'opp_team_ga_5'],                                 | |
-| |                      dtype='object')                                    | |
-| +-------------------------------------------------------------------------+ |
-+-----------------------------------------------------------------------------+
-KeyError: "['opp_goalie_ga_smooth'] not in index"
-C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\data\load_ytd.py:9: UserWarning: Parsing dates in %Y-%m-%d format when dayfirst=True was specified. Pass `dayfirst=False` or specify a format to silence this warning.
-  df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
-+--------------------- Traceback (most recent call last) ---------------------+
-| C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\cli\p |
-| redict.py:44 in tomorrow                                                    |
-|                                                                             |
-|    41             return _bundle_from_loaded(d)                             |
-|    42         return trainer(*args, **kwargs)                               |
-|    43                                                                       |
-| >  44     bundle_points  = _load_or_train("lgbm_poisson_points",         tr |
-|    45     bundle_goals   = _load_or_train("lgbm_poisson_goals",          tr |
-|    46     bundle_assists = _load_or_train("lgbm_poisson_assists",        tr |
-|    47     bundle_shots   = _load_or_train("lgbm_poisson_shots_on_goal",  tr |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |    date = '2025-10-14'                                                  | |
-| | df_feat =       game_id team opponent  ... opp_team_gf_5 opp_team_ga_5  | |
-| |           opp_goalie_ga_smooth                                          | |
-| |           1328    22382   SJ      ANA  ...           9.0           9.0  | |
-| |           0.0                                                           | |
-| |           1327    22382   SJ      ANA  ...           9.0           9.0  | |
-| |           0.0                                                           | |
-| |           1330    22382   SJ      ANA  ...           9.0           9.0  | |
-| |           0.0                                                           | |
-| |           1333    22382   SJ      ANA  ...           9.0           9.0  | |
-| |           0.0                                                           | |
-| |           1331    22382   SJ      ANA  ...           9.0           9.0  | |
-| |           0.0                                                           | |
-| |           ...       ...  ...      ...  ...           ...           ...  | |
-| |           ...                                                           | |
-| |           76929   23953  CGY      WPG  ...          11.0          11.0  | |
-| |           0.8                                                           | |
-| |           76924   23953  CGY      WPG  ...          11.0          11.0  | |
-| |           0.8                                                           | |
-| |           76916   23953  CGY      WPG  ...          11.0          11.0  | |
-| |           0.8                                                           | |
-| |           76925   23953  CGY      WPG  ...          11.0          11.0  | |
-| |           0.0                                                           | |
-| |           76917   23953  CGY      WPG  ...          11.0          11.0  | |
-| |           0.0                                                           | |
-| |                                                                         | |
-| |           [77475 rows x 27 columns]                                     | |
-| |  df_ytd =       game_id team  ... power_play_goals                      | |
-| |           goal_tending_goals_against                                    | |
-| |           0       22372  CBJ  ...              0.0                      | |
-| |           0.0                                                           | |
-| |           1       22372  CBJ  ...              0.0                      | |
-| |           0.0                                                           | |
-| |           2       22372  CBJ  ...              0.0                      | |
-| |           0.0                                                           | |
-| |           3       22372  CBJ  ...              0.0                      | |
-| |           0.0                                                           | |
-| |           4       22372  CBJ  ...              0.0                      | |
-| |           0.0                                                           | |
-| |           ...       ...  ...  ...              ...                      | |
-| |           ...                                                           | |
-| |           77470   23945  UTA  ...              0.0                      | |
-| |           0.0                                                           | |
-| |           77471   23945  UTA  ...              0.0                      | |
-| |           0.0                                                           | |
-| |           77472   23945  UTA  ...              0.0                      | |
-| |           0.0                                                           | |
-| |           77473   23945  UTA  ...              0.0                      | |
-| |           0.0                                                           | |
-| |           77474   23945  UTA  ...              0.0                      | |
-| |           4.0                                                           | |
-| |                                                                         | |
-| |           [77475 rows x 15 columns]                                     | |
-| |  run_id = '9590b131-cae4-42d2-ba0e-e4b743a1973a'                        | |
-| | ytd_csv = 'data/NHL_2023_24.csv'                                        | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\cli\p |
-| redict.py:40 in _load_or_train                                              |
-|                                                                             |
-|    37     def _load_or_train(prefix, trainer, *args, **kwargs):             |
-|    38         path = latest_model_path(prefix)                              |
-|    39         if path:                                                      |
-| >  40             d = load_model(path)                                      |
-|    41             return _bundle_from_loaded(d)                             |
-|    42         return trainer(*args, **kwargs)                               |
-|    43                                                                       |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |   args = (                                                              | |
-| |                    game_id team opponent  ... opp_team_gf_5             | |
-| |          opp_team_ga_5 opp_goalie_ga_smooth                             | |
-| |          1328    22382   SJ      ANA  ...           9.0           9.0   | |
-| |          0.0                                                            | |
-| |          1327    22382   SJ      ANA  ...           9.0           9.0   | |
-| |          0.0                                                            | |
-| |          1330    22382   SJ      ANA  ...           9.0           9.0   | |
-| |          0.0                                                            | |
-| |          1333    22382   SJ      ANA  ...           9.0           9.0   | |
-| |          0.0                                                            | |
-| |          1331    22382   SJ      ANA  ...           9.0           9.0   | |
-| |          0.0                                                            | |
-| |          ...       ...  ...      ...  ...           ...           ...   | |
-| |          ...                                                            | |
-| |          76929   23953  CGY      WPG  ...          11.0          11.0   | |
-| |          0.8                                                            | |
-| |          76924   23953  CGY      WPG  ...          11.0          11.0   | |
-| |          0.8                                                            | |
-| |          76916   23953  CGY      WPG  ...          11.0          11.0   | |
-| |          0.8                                                            | |
-| |          76925   23953  CGY      WPG  ...          11.0          11.0   | |
-| |          0.0                                                            | |
-| |          76917   23953  CGY      WPG  ...          11.0          11.0   | |
-| |          0.0                                                            | |
-| |                                                                         | |
-| |          [77475 rows x 27 columns],                                     | |
-| |              [                                                          | |
-| |                  'home_or_away',                                        | |
-| |                  'minutes',                                             | |
-| |                  'days_off',                                            | |
-| |                  'rolling_points_5',                                    | |
-| |                  'rolling_goals_5',                                     | |
-| |                  'rolling_assists_5',                                   | |
-| |                  'rolling_shots_on_goal_5',                             | |
-| |                  'opp_goalie_ga_smooth',                                | |
-| |                  'team_gf_5',                                           | |
-| |                  'team_ga_5'                                            | |
-| |              ]                                                          | |
-| |          )                                                              | |
-| | kwargs = {'target': 'points'}                                           | |
-| |   path = 'models\\lgbm_poisson_points_0.3.0.joblib'                     | |
-| | prefix = 'lgbm_poisson_points'                                          | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\model |
-| ing\io.py:36 in load_model                                                  |
-|                                                                             |
-|   33                                                                        |
-|   34     #if(path.contains('models//models')):                              |
-|   35     #   return "HELLO 2x "                                             |
-| > 36     return joblib.load(path)                                           |
-|   37                                                                        |
-|   38 def latest_model_path(prefix: str, dir: Path | None = None) -> str | N |
-|   39     """Find the most recent joblib file whose name starts with prefix. |
-|                                                                             |
-| +------------------------------- locals -------------------------------+    |
-| |  dir = WindowsPath('models')                                         |    |
-| | name = 'models\\lgbm_poisson_points_0.3.0.joblib'                    |    |
-| | path = WindowsPath('models/models/lgbm_poisson_points_0.3.0.joblib') |    |
-| +----------------------------------------------------------------------+    |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \joblib\numpy_pickle.py:735 in load                                         |
-|                                                                             |
-|   732         with _validate_fileobject_and_memmap(fobj, filename, mmap_mod |
-|   733             obj = _unpickle(fobj, ensure_native_byte_order=ensure_nat |
-|   734     else:                                                             |
-| > 735         with open(filename, "rb") as f:                               |
-|   736             with _validate_fileobject_and_memmap(f, filename, mmap_mo |
-|   737                 fobj,                                                 |
-|   738                 validated_mmap_mode,                                  |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| | ensure_native_byte_order = True                                         | |
-| |                 filename = 'models\\models\\lgbm_poisson_points_0.3.0.… | |
-| |                mmap_mode = None                                         | |
-| +-------------------------------------------------------------------------+ |
-+-----------------------------------------------------------------------------+
-FileNotFoundError: [Errno 2] No such file or directory: 
-'models\\models\\lgbm_poisson_points_0.3.0.joblib'
-C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\data\load_ytd.py:9: UserWarning: Parsing dates in %Y-%m-%d format when dayfirst=True was specified. Pass `dayfirst=False` or specify a format to silence this warning.
-  df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
-[LightGBM] [Fatal] The number of features in data (8) is not the same as it was in training data (7).
-You can set ``predict_disable_shape_check=true`` to discard this error, but please be aware what you are doing.
-+--------------------- Traceback (most recent call last) ---------------------+
-| C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\cli\p |
-| redict.py:114 in tomorrow                                                   |
-|                                                                             |
-|   111     if missing:                                                       |
-|   112         raise KeyError(f"Missing {missing} in team_rows (predict)")   |
-|   113                                                                       |
-| > 114     preds_totals = predict_match_totals(bundle_team_home, bundle_team |
-|   115                                                                       |
-|   116                                                                       |
-|   117     all_preds = pd.concat([preds_points, preds_goals, preds_assists,  |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |   bundle_assists = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x000001EB4B4BB590>                        | |
-| |     bundle_goals = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x000001EB4B00ADD0>                        | |
-| |    bundle_points = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x000001EB4AFD7490>                        | |
-| |     bundle_shots = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x000001EB4C665350>                        | |
-| | bundle_team_away = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x000001EB4C667250>                        | |
-| | bundle_team_home = <white_shorts.cli.predict.tomorrow.<locals>._bundle… | |
-| |                    object at 0x000001EB4C667250>                        | |
-| |                c = 'name'                                               | |
-| |             date = '2025-10-14'                                         | |
-| |          df_feat =       game_id team opponent  ... opp_team_gf_5       | |
-| |                    opp_team_ga_5 opp_goalie_ga_smooth                   | |
-| |                    1328    22382   SJ      ANA  ...           9.0       | |
-| |                    9.0                  0.0                             | |
-| |                    1327    22382   SJ      ANA  ...           9.0       | |
-| |                    9.0                  0.0                             | |
-| |                    1330    22382   SJ      ANA  ...           9.0       | |
-| |                    9.0                  0.0                             | |
-| |                    1333    22382   SJ      ANA  ...           9.0       | |
-| |                    9.0                  0.0                             | |
-| |                    1331    22382   SJ      ANA  ...           9.0       | |
-| |                    9.0                  0.0                             | |
-| |                    ...       ...  ...      ...  ...           ...       | |
-| |                    ...                  ...                             | |
-| |                    76929   23953  CGY      WPG  ...          11.0       | |
-| |                    11.0                  0.8                            | |
-| |                    76924   23953  CGY      WPG  ...          11.0       | |
-| |                    11.0                  0.8                            | |
-| |                    76916   23953  CGY      WPG  ...          11.0       | |
-| |                    11.0                  0.8                            | |
-| |                    76925   23953  CGY      WPG  ...          11.0       | |
-| |                    11.0                  0.0                            | |
-| |                    76917   23953  CGY      WPG  ...          11.0       | |
-| |                    11.0                  0.0                            | |
-| |                                                                         | |
-| |                    [77475 rows x 27 columns]                            | |
-| |           df_ytd =       game_id team  ... power_play_goals             | |
-| |                    goal_tending_goals_against                           | |
-| |                    0       22372  CBJ  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    1       22372  CBJ  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    2       22372  CBJ  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    3       22372  CBJ  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    4       22372  CBJ  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    ...       ...  ...  ...              ...             | |
-| |                    ...                                                  | |
-| |                    77470   23945  UTA  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    77471   23945  UTA  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    77472   23945  UTA  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    77473   23945  UTA  ...              0.0             | |
-| |                    0.0                                                  | |
-| |                    77474   23945  UTA  ...              0.0             | |
-| |                    4.0                                                  | |
-| |                                                                         | |
-| |                    [77475 rows x 15 columns]                            | |
-| |        feat_cols = [                                                    | |
-| |                        'date',                                          | |
-| |                        'game_id',                                       | |
-| |                        'team',                                          | |
-| |                        'opponent',                                      | |
-| |                        'player_id',                                     | |
-| |                        'name',                                          | |
-| |                        'home_or_away',                                  | |
-| |                        'minutes',                                       | |
-| |                        'days_off',                                      | |
-| |                        'rolling_points_5',                              | |
-| |                        ... +6                                           | |
-| |                    ]                                                    | |
+| |          id_cols = ['date', 'game_id', 'team', 'opponent']              | |
 | |             keys = [                                                    | |
 | |                        'date',                                          | |
 | |                        'game_id',                                       | |
@@ -1186,62 +154,88 @@ You can set ``predict_disable_shape_check=true`` to discard this error, but plea
 | |                                                                         | |
 | |                    [659 rows x 16 columns]                              | |
 | |    preds_assists =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:40:17.739693       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:40:17.739693       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:40:17.739693       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:40:17.739693       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:40:17.739693       | |
+| |                    0   2025-10-14  ... 2025-10-15 11:11:27.936588       | |
+| |                    1   2025-10-14  ... 2025-10-15 11:11:27.936588       | |
+| |                    2   2025-10-14  ... 2025-10-15 11:11:27.936588       | |
+| |                    3   2025-10-14  ... 2025-10-15 11:11:27.936588       | |
+| |                    4   2025-10-14  ... 2025-10-15 11:11:27.936588       | |
 | |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:40:17.739693       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:40:17.739693       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:40:17.739693       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:40:17.739693       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:40:17.739693       | |
+| |                    654 2025-10-14  ... 2025-10-15 11:11:27.936588       | |
+| |                    655 2025-10-14  ... 2025-10-15 11:11:27.936588       | |
+| |                    656 2025-10-14  ... 2025-10-15 11:11:27.936588       | |
+| |                    657 2025-10-14  ... 2025-10-15 11:11:27.936588       | |
+| |                    658 2025-10-14  ... 2025-10-15 11:11:27.936588       | |
 | |                                                                         | |
 | |                    [659 rows x 16 columns]                              | |
 | |      preds_goals =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:40:16.934668       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:40:16.934668       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:40:16.934668       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:40:16.934668       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:40:16.934668       | |
+| |                    0   2025-10-14  ... 2025-10-15 11:11:27.507674       | |
+| |                    1   2025-10-14  ... 2025-10-15 11:11:27.507674       | |
+| |                    2   2025-10-14  ... 2025-10-15 11:11:27.507674       | |
+| |                    3   2025-10-14  ... 2025-10-15 11:11:27.507674       | |
+| |                    4   2025-10-14  ... 2025-10-15 11:11:27.507674       | |
 | |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:40:16.934668       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:40:16.934668       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:40:16.934668       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:40:16.934668       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:40:16.934668       | |
+| |                    654 2025-10-14  ... 2025-10-15 11:11:27.507674       | |
+| |                    655 2025-10-14  ... 2025-10-15 11:11:27.507674       | |
+| |                    656 2025-10-14  ... 2025-10-15 11:11:27.507674       | |
+| |                    657 2025-10-14  ... 2025-10-15 11:11:27.507674       | |
+| |                    658 2025-10-14  ... 2025-10-15 11:11:27.507674       | |
 | |                                                                         | |
 | |                    [659 rows x 16 columns]                              | |
 | |     preds_points =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:40:16.100672       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:40:16.100672       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:40:16.100672       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:40:16.100672       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:40:16.100672       | |
+| |                    0   2025-10-14  ... 2025-10-15 11:11:27.053280       | |
+| |                    1   2025-10-14  ... 2025-10-15 11:11:27.053280       | |
+| |                    2   2025-10-14  ... 2025-10-15 11:11:27.053280       | |
+| |                    3   2025-10-14  ... 2025-10-15 11:11:27.053280       | |
+| |                    4   2025-10-14  ... 2025-10-15 11:11:27.053280       | |
 | |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:40:16.100672       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:40:16.100672       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:40:16.100672       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:40:16.100672       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:40:16.100672       | |
+| |                    654 2025-10-14  ... 2025-10-15 11:11:27.053280       | |
+| |                    655 2025-10-14  ... 2025-10-15 11:11:27.053280       | |
+| |                    656 2025-10-14  ... 2025-10-15 11:11:27.053280       | |
+| |                    657 2025-10-14  ... 2025-10-15 11:11:27.053280       | |
+| |                    658 2025-10-14  ... 2025-10-15 11:11:27.053280       | |
 | |                                                                         | |
 | |                    [659 rows x 16 columns]                              | |
 | |      preds_shots =           date  ...                 created_ts       | |
-| |                    0   2025-10-14  ... 2025-10-15 06:40:18.583368       | |
-| |                    1   2025-10-14  ... 2025-10-15 06:40:18.583368       | |
-| |                    2   2025-10-14  ... 2025-10-15 06:40:18.583368       | |
-| |                    3   2025-10-14  ... 2025-10-15 06:40:18.583368       | |
-| |                    4   2025-10-14  ... 2025-10-15 06:40:18.583368       | |
+| |                    0   2025-10-14  ... 2025-10-15 11:11:28.372592       | |
+| |                    1   2025-10-14  ... 2025-10-15 11:11:28.372592       | |
+| |                    2   2025-10-14  ... 2025-10-15 11:11:28.372592       | |
+| |                    3   2025-10-14  ... 2025-10-15 11:11:28.372592       | |
+| |                    4   2025-10-14  ... 2025-10-15 11:11:28.372592       | |
 | |                    ..         ...  ...                        ...       | |
-| |                    654 2025-10-14  ... 2025-10-15 06:40:18.583368       | |
-| |                    655 2025-10-14  ... 2025-10-15 06:40:18.583368       | |
-| |                    656 2025-10-14  ... 2025-10-15 06:40:18.583368       | |
-| |                    657 2025-10-14  ... 2025-10-15 06:40:18.583368       | |
-| |                    658 2025-10-14  ... 2025-10-15 06:40:18.583368       | |
+| |                    654 2025-10-14  ... 2025-10-15 11:11:28.372592       | |
+| |                    655 2025-10-14  ... 2025-10-15 11:11:28.372592       | |
+| |                    656 2025-10-14  ... 2025-10-15 11:11:28.372592       | |
+| |                    657 2025-10-14  ... 2025-10-15 11:11:28.372592       | |
+| |                    658 2025-10-14  ... 2025-10-15 11:11:28.372592       | |
 | |                                                                         | |
 | |                    [659 rows x 16 columns]                              | |
-| |           run_id = '907e18fa-debb-4aef-a6a7-7231b817a80a'               | |
+| |     preds_totals =            date  ...                                 | |
+| |                    created_ts                                           | |
+| |                    0    2024-09-25  ... 2025-10-15                      | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    1    2024-09-25  ... 2025-10-15                      | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    2    2024-09-25  ... 2025-10-15                      | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    3    2024-09-25  ... 2025-10-15                      | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    4    2024-09-25  ... 2025-10-15                      | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    ...         ...  ...                                 | |
+| |                    ...                                                  | |
+| |                    3176 2025-10-04  ... 2025-10-15                      | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    3177 2025-10-04  ... 2025-10-15                      | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    3178 2025-10-04  ... 2025-10-15                      | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    3179 2025-10-04  ... 2025-10-15                      | |
+| |                    11:11:31.358895+00:00                                | |
+| |                    3180 2025-10-04  ... 2025-10-15                      | |
+| |                    11:11:31.358895+00:00                                | |
+| |                                                                         | |
+| |                    [3181 rows x 16 columns]                             | |
+| |           run_id = '3cc7327e-82fe-47f2-9421-3bff2a95528c'               | |
 | |            slate =           date game_id team opponent player_id       | |
 | |                    name                                                 | |
 | |                    0   2025-10-14   24022   TB      WAS  30000428       | |
@@ -1371,7 +365,7 @@ You can set ``predict_disable_shape_check=true`` to discard this error, but plea
 | |                    3180 2025-10-04   23971  ...          12.8           | |
 | |                    0.000000                                             | |
 | |                                                                         | |
-| |                    [3181 rows x 12 columns]                             | |
+| |                    [3181 rows x 11 columns]                             | |
 | |      team_target =            date game_id team opponent  home_or_away  | |
 | |                    team_goals                                           | |
 | |                    0    2024-09-25   22370   NJ      WAS             1  | |
@@ -1401,381 +395,35 @@ You can set ``predict_disable_shape_check=true`` to discard this error, but plea
 | |          ytd_csv = 'data/NHL_2023_24.csv'                               | |
 | +-------------------------------------------------------------------------+ |
 |                                                                             |
-| C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\model |
-| ing\predictors.py:26 in predict_match_totals                                |
+| C:\Users\u0056181\source\repos\elfie-in-white-shorts\src\white_shorts\data\ |
+| persist.py:46 in append                                                     |
 |                                                                             |
-|   23 def predict_match_totals(home_bundle, away_bundle, df_match_rows: pd.D |
-|   24     Xh = df_match_rows[home_bundle.features].fillna(0)                 |
-|   25     Xa = df_match_rows[away_bundle.features].fillna(0)                 |
-| > 26     lam_h = home_bundle.model.predict(Xh)                              |
-|   27     lam_a = away_bundle.model.predict(Xa)                              |
-|   28     lam_total = lam_h + lam_a                                          |
-|   29     q10, q90 = zip(*[poisson_quantiles(float(l)) for l in lam_total])  |
+|   43         return                                                         |
+|   44     con = _connect()                                                   |
+|   45     con.register("_df", df)                                            |
+| > 46     con.execute(f"INSERT INTO {table} SELECT * FROM _df")              |
+|   47     con.unregister("_df")                                              |
+|   48     con.close()                                                        |
+|   49                                                                        |
 |                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |   away_bundle = <white_shorts.cli.predict.tomorrow.<locals>._bundle_fr… | |
-| |                 object at 0x000001EB4C667250>                           | |
-| | df_match_rows =            date game_id  ... opp_team_ga_5              | |
-| |                 opp_goalie_ga_smooth                                    | |
-| |                 0    2024-09-25   22370  ...           8.0              | |
-| |                 0.061538                                                | |
-| |                 1    2024-09-25   22370  ...          14.0              | |
-| |                 0.045455                                                | |
-| |                 2    2024-09-25   22371  ...          16.0              | |
-| |                 0.623684                                                | |
-| |                 3    2024-09-25   22371  ...          20.0              | |
-| |                 0.435965                                                | |
-| |                 4    2024-09-25   22372  ...           8.0              | |
-| |                 0.000000                                                | |
-| |                 ...         ...     ...  ...           ...              | |
-| |                 ...                                                     | |
-| |                 3176 2025-10-04   23944  ...          11.1              | |
-| |                 0.300000                                                | |
-| |                 3177 2025-10-04   23945  ...          10.9              | |
-| |                 0.240000                                                | |
-| |                 3178 2025-10-04   23945  ...          15.0              | |
-| |                 0.160000                                                | |
-| |                 3179 2025-10-04   23971  ...           0.6              | |
-| |                 0.200000                                                | |
-| |                 3180 2025-10-04   23971  ...          12.8              | |
-| |                 0.000000                                                | |
-| |                                                                         | |
-| |                 [3181 rows x 12 columns]                                | |
-| |   home_bundle = <white_shorts.cli.predict.tomorrow.<locals>._bundle_fr… | |
-| |                 object at 0x000001EB4C667250>                           | |
-| |        run_id = '907e18fa-debb-4aef-a6a7-7231b817a80a'                  | |
-| |            Xa =       home_or_away  home_or_away  ...  opp_team_ga_5    | |
-| |                 opp_goalie_ga_smooth                                    | |
-| |                 0                1             1  ...            8.0    | |
-| |                 0.061538                                                | |
-| |                 1                0             0  ...           14.0    | |
-| |                 0.045455                                                | |
-| |                 2                0             0  ...           16.0    | |
-| |                 0.623684                                                | |
-| |                 3                1             1  ...           20.0    | |
-| |                 0.435965                                                | |
-| |                 4                1             1  ...            8.0    | |
-| |                 0.000000                                                | |
-| |                 ...            ...           ...  ...            ...    | |
-| |                 ...                                                     | |
-| |                 3176             0             0  ...           11.1    | |
-| |                 0.300000                                                | |
-| |                 3177             0             0  ...           10.9    | |
-| |                 0.240000                                                | |
-| |                 3178             1             1  ...           15.0    | |
-| |                 0.160000                                                | |
-| |                 3179             1             1  ...            0.6    | |
-| |                 0.200000                                                | |
-| |                 3180             0             0  ...           12.8    | |
-| |                 0.000000                                                | |
-| |                                                                         | |
-| |                 [3181 rows x 8 columns]                                 | |
-| |            Xh =       home_or_away  home_or_away  ...  opp_team_ga_5    | |
-| |                 opp_goalie_ga_smooth                                    | |
-| |                 0                1             1  ...            8.0    | |
-| |                 0.061538                                                | |
-| |                 1                0             0  ...           14.0    | |
-| |                 0.045455                                                | |
-| |                 2                0             0  ...           16.0    | |
-| |                 0.623684                                                | |
-| |                 3                1             1  ...           20.0    | |
-| |                 0.435965                                                | |
-| |                 4                1             1  ...            8.0    | |
-| |                 0.000000                                                | |
-| |                 ...            ...           ...  ...            ...    | |
-| |                 ...                                                     | |
-| |                 3176             0             0  ...           11.1    | |
-| |                 0.300000                                                | |
-| |                 3177             0             0  ...           10.9    | |
-| |                 0.240000                                                | |
-| |                 3178             1             1  ...           15.0    | |
-| |                 0.160000                                                | |
-| |                 3179             1             1  ...            0.6    | |
-| |                 0.200000                                                | |
-| |                 3180             0             0  ...           12.8    | |
-| |                 0.000000                                                | |
-| |                                                                         | |
-| |                 [3181 rows x 8 columns]                                 | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \lightgbm\sklearn.py:1144 in predict                                        |
-|                                                                             |
-|   1141         predict_params = _choose_param_value("num_threads", predict_ |
-|   1142         predict_params["num_threads"] = self._process_n_jobs(predict |
-|   1143                                                                      |
-| > 1144         return self._Booster.predict(  # type: ignore[union-attr]    |
-|   1145             X,                                                       |
-|   1146             raw_score=raw_score,                                     |
-|   1147             start_iteration=start_iteration,                         |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |             alias = 'n_iter'                                            | |
-| |            kwargs = {}                                                  | |
-| |     num_iteration = None                                                | |
-| |      pred_contrib = False                                               | |
-| |         pred_leaf = False                                               | |
-| |    predict_params = {                                                   | |
-| |                         'boosting_type': 'gbdt',                        | |
-| |                         'colsample_bytree': 1.0,                        | |
-| |                         'learning_rate': 0.05,                          | |
-| |                         'max_depth': -1,                                | |
-| |                         'min_child_samples': 20,                        | |
-| |                         'min_child_weight': 0.001,                      | |
-| |                         'min_split_gain': 0.0,                          | |
-| |                         'num_leaves': 31,                               | |
-| |                         'random_state': None,                           | |
-| |                         'reg_alpha': 0.0,                               | |
-| |                         ... +7                                          | |
-| |                     }                                                   | |
-| |         raw_score = False                                               | |
-| |              self = LGBMRegressor(learning_rate=0.05, n_estimators=300, | |
-| |                     objective='poisson')                                | |
-| |   start_iteration = 0                                                   | |
-| | validate_features = False                                               | |
-| |                 X =       home_or_away  home_or_away  ...               | |
-| |                     opp_team_ga_5  opp_goalie_ga_smooth                 | |
-| |                     0                1             1  ...               | |
-| |                     8.0              0.061538                           | |
-| |                     1                0             0  ...               | |
-| |                     14.0              0.045455                          | |
-| |                     2                0             0  ...               | |
-| |                     16.0              0.623684                          | |
-| |                     3                1             1  ...               | |
-| |                     20.0              0.435965                          | |
-| |                     4                1             1  ...               | |
-| |                     8.0              0.000000                           | |
-| |                     ...            ...           ...  ...               | |
-| |                     ...                   ...                           | |
-| |                     3176             0             0  ...               | |
-| |                     11.1              0.300000                          | |
-| |                     3177             0             0  ...               | |
-| |                     10.9              0.240000                          | |
-| |                     3178             1             1  ...               | |
-| |                     15.0              0.160000                          | |
-| |                     3179             1             1  ...               | |
-| |                     0.6              0.200000                           | |
-| |                     3180             0             0  ...               | |
-| |                     12.8              0.000000                          | |
-| |                                                                         | |
-| |                     [3181 rows x 8 columns]                             | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \lightgbm\basic.py:4767 in predict                                          |
-|                                                                             |
-|   4764                 num_iteration = self.best_iteration                  |
-|   4765             else:                                                    |
-|   4766                 num_iteration = -1                                   |
-| > 4767         return predictor.predict(                                    |
-|   4768             data=data,                                               |
-|   4769             start_iteration=start_iteration,                         |
-|   4770             num_iteration=num_iteration,                             |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |              data =       home_or_away  home_or_away  ...               | |
-| |                     opp_team_ga_5  opp_goalie_ga_smooth                 | |
-| |                     0                1             1  ...               | |
-| |                     8.0              0.061538                           | |
-| |                     1                0             0  ...               | |
-| |                     14.0              0.045455                          | |
-| |                     2                0             0  ...               | |
-| |                     16.0              0.623684                          | |
-| |                     3                1             1  ...               | |
-| |                     20.0              0.435965                          | |
-| |                     4                1             1  ...               | |
-| |                     8.0              0.000000                           | |
-| |                     ...            ...           ...  ...               | |
-| |                     ...                   ...                           | |
-| |                     3176             0             0  ...               | |
-| |                     11.1              0.300000                          | |
-| |                     3177             0             0  ...               | |
-| |                     10.9              0.240000                          | |
-| |                     3178             1             1  ...               | |
-| |                     15.0              0.160000                          | |
-| |                     3179             1             1  ...               | |
-| |                     0.6              0.200000                           | |
-| |                     3180             0             0  ...               | |
-| |                     12.8              0.000000                          | |
-| |                                                                         | |
-| |                     [3181 rows x 8 columns]                             | |
-| |   data_has_header = False                                               | |
-| |            kwargs = {                                                   | |
-| |                         'boosting_type': 'gbdt',                        | |
-| |                         'colsample_bytree': 1.0,                        | |
-| |                         'learning_rate': 0.05,                          | |
-| |                         'max_depth': -1,                                | |
-| |                         'min_child_samples': 20,                        | |
-| |                         'min_child_weight': 0.001,                      | |
-| |                         'min_split_gain': 0.0,                          | |
-| |                         'num_leaves': 31,                               | |
-| |                         'random_state': None,                           | |
-| |                         'reg_alpha': 0.0,                               | |
-| |                         ... +7                                          | |
-| |                     }                                                   | |
-| |     num_iteration = 0                                                   | |
-| |      pred_contrib = False                                               | |
-| |         pred_leaf = False                                               | |
-| |         predictor = <lightgbm.basic._InnerPredictor object at           | |
-| |                     0x000001EB4BD6A950>                                 | |
-| |         raw_score = False                                               | |
-| |              self = <lightgbm.basic.Booster object at                   | |
-| |                     0x000001EB4C670DD0>                                 | |
-| |   start_iteration = 0                                                   | |
-| | validate_features = False                                               | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \lightgbm\basic.py:1204 in predict                                          |
-|                                                                             |
-|   1201                 predict_type=predict_type,                           |
-|   1202             )                                                        |
-|   1203         elif isinstance(data, np.ndarray):                           |
-| > 1204             preds, nrow = self.__pred_for_np2d(                      |
-|   1205                 mat=data,                                            |
-|   1206                 start_iteration=start_iteration,                     |
-|   1207                 num_iteration=num_iteration,                         |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |              data = array([[ 1.        ,  1.        ,  7.        , ..., | |
-| |                     8.        ,                                         | |
-| |                              8.        ,  0.06153846],                  | |
-| |                            [ 0.        ,  0.        ,  7.        , ..., | |
-| |                     14.        ,                                        | |
-| |                             14.        ,  0.04545455],                  | |
-| |                            [ 0.        ,  0.        ,  7.        , ..., | |
-| |                     16.        ,                                        | |
-| |                             16.        ,  0.62368421],                  | |
-| |                            ...,                                         | |
-| |                            [ 1.        ,  1.        ,  2.        , ..., | |
-| |                     15.        ,                                        | |
-| |                             15.        ,  0.16      ],                  | |
-| |                            [ 1.        ,  1.        ,  1.        , ..., | |
-| |                     0.6       ,                                         | |
-| |                              0.6       ,  0.2       ],                  | |
-| |                            [ 0.        ,  0.        ,  2.        , ..., | |
-| |                     12.8       ,                                        | |
-| |                             12.8       ,  0.        ]], shape=(3181,    | |
-| |                     8))                                                 | |
-| |   data_has_header = False                                               | |
-| |     num_iteration = 0                                                   | |
-| |      pred_contrib = False                                               | |
-| |         pred_leaf = False                                               | |
-| |      predict_type = 0                                                   | |
-| |         raw_score = False                                               | |
-| |              self = <lightgbm.basic._InnerPredictor object at           | |
-| |                     0x000001EB4BD6A950>                                 | |
-| |   start_iteration = 0                                                   | |
-| | validate_features = False                                               | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \lightgbm\basic.py:1361 in __pred_for_np2d                                  |
-|                                                                             |
-|   1358                 )                                                    |
-|   1359             return preds, nrow                                       |
-|   1360         else:                                                        |
-| > 1361             return self.__inner_predict_np2d(                        |
-|   1362                 mat=mat,                                             |
-|   1363                 start_iteration=start_iteration,                     |
-|   1364                 num_iteration=num_iteration,                         |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |             mat = array([[ 1.        ,  1.        ,  7.        , ...,   | |
-| |                   8.        ,                                           | |
-| |                            8.        ,  0.06153846],                    | |
-| |                          [ 0.        ,  0.        ,  7.        , ...,   | |
-| |                   14.        ,                                          | |
-| |                           14.        ,  0.04545455],                    | |
-| |                          [ 0.        ,  0.        ,  7.        , ...,   | |
-| |                   16.        ,                                          | |
-| |                           16.        ,  0.62368421],                    | |
-| |                          ...,                                           | |
-| |                          [ 1.        ,  1.        ,  2.        , ...,   | |
-| |                   15.        ,                                          | |
-| |                           15.        ,  0.16      ],                    | |
-| |                          [ 1.        ,  1.        ,  1.        , ...,   | |
-| |                   0.6       ,                                           | |
-| |                            0.6       ,  0.2       ],                    | |
-| |                          [ 0.        ,  0.        ,  2.        , ...,   | |
-| |                   12.8       ,                                          | |
-| |                           12.8       ,  0.        ]], shape=(3181, 8))  | |
-| |            nrow = 3181                                                  | |
-| |   num_iteration = 0                                                     | |
-| |    predict_type = 0                                                     | |
-| |            self = <lightgbm.basic._InnerPredictor object at             | |
-| |                   0x000001EB4BD6A950>                                   | |
-| | start_iteration = 0                                                     | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \lightgbm\basic.py:1307 in __inner_predict_np2d                             |
-|                                                                             |
-|   1304         elif len(preds.shape) != 1 or len(preds) != n_preds:         |
-|   1305             raise ValueError("Wrong length of pre-allocated predict  |
-|   1306         out_num_preds = ctypes.c_int64(0)                            |
-| > 1307         _safe_call(                                                  |
-|   1308             _LIB.LGBM_BoosterPredictForMat(                          |
-|   1309                 self._handle,                                        |
-|   1310                 ptr_data,                                            |
-|                                                                             |
-| +-------------------------------- locals ---------------------------------+ |
-| |               _ = array([1.  , 0.  , 0.  , ..., 0.16, 0.2 , 0.  ],      | |
-| |                   shape=(25448,))                                       | |
-| |            data = array([1.  , 0.  , 0.  , ..., 0.16, 0.2 , 0.  ],      | |
-| |                   shape=(25448,))                                       | |
-| |          layout = 0                                                     | |
-| |             mat = array([[ 1.        ,  1.        ,  7.        , ...,   | |
-| |                   8.        ,                                           | |
-| |                            8.        ,  0.06153846],                    | |
-| |                          [ 0.        ,  0.        ,  7.        , ...,   | |
-| |                   14.        ,                                          | |
-| |                           14.        ,  0.04545455],                    | |
-| |                          [ 0.        ,  0.        ,  7.        , ...,   | |
-| |                   16.        ,                                          | |
-| |                           16.        ,  0.62368421],                    | |
-| |                          ...,                                           | |
-| |                          [ 1.        ,  1.        ,  2.        , ...,   | |
-| |                   15.        ,                                          | |
-| |                           15.        ,  0.16      ],                    | |
-| |                          [ 1.        ,  1.        ,  1.        , ...,   | |
-| |                   0.6       ,                                           | |
-| |                            0.6       ,  0.2       ],                    | |
-| |                          [ 0.        ,  0.        ,  2.        , ...,   | |
-| |                   12.8       ,                                          | |
-| |                           12.8       ,  0.        ]], shape=(3181, 8))  | |
-| |         n_preds = 3181                                                  | |
-| |   num_iteration = 0                                                     | |
-| |   out_num_preds = c_longlong(0)                                         | |
-| |    predict_type = 0                                                     | |
-| |           preds = array([1.04256292e-311, 1.04255978e-311,              | |
-| |                   3.33246074e-193, ...,                                 | |
-| |                          4.75668491e-191, 4.75668491e-191,              | |
-| |                   4.75668491e-191], shape=(3181,))                      | |
-| |        ptr_data = <lightgbm.basic.LP_c_double object at                 | |
-| |                   0x000001EB4B4BF5D0>                                   | |
-| |            self = <lightgbm.basic._InnerPredictor object at             | |
-| |                   0x000001EB4BD6A950>                                   | |
-| | start_iteration = 0                                                     | |
-| |   type_ptr_data = 1                                                     | |
-| +-------------------------------------------------------------------------+ |
-|                                                                             |
-| C:\Users\u0056181\source\repos\AI_WhiteShorts\WhiteShorts\Lib\site-packages |
-| \lightgbm\basic.py:313 in _safe_call                                        |
-|                                                                             |
-|    310         The return value from C API calls.                           |
-|    311     """                                                              |
-|    312     if ret != 0:                                                     |
-| >  313         raise LightGBMError(_LIB.LGBM_GetLastError().decode("utf-8") |
-|    314                                                                      |
-|    315                                                                      |
-|    316 def _is_numeric(obj: Any) -> bool:                                   |
-|                                                                             |
-| +- locals -+                                                                |
-| | ret = -1 |                                                                |
-| +----------+                                                                |
+| +----------------------------- locals ------------------------------+       |
+| |   con = <_duckdb.DuckDBPyConnection object at 0x00000278E79C47F0> |       |
+| |    df =            date  ...                        created_ts    |       |
+| |         0    2025-10-14  ...        2025-10-15 11:11:27.053280    |       |
+| |         1    2025-10-14  ...        2025-10-15 11:11:27.053280    |       |
+| |         2    2025-10-14  ...        2025-10-15 11:11:27.053280    |       |
+| |         3    2025-10-14  ...        2025-10-15 11:11:27.053280    |       |
+| |         4    2025-10-14  ...        2025-10-15 11:11:27.053280    |       |
+| |         ...         ...  ...                               ...    |       |
+| |         5812 2025-10-04  ...  2025-10-15 11:11:31.358895+00:00    |       |
+| |         5813 2025-10-04  ...  2025-10-15 11:11:31.358895+00:00    |       |
+| |         5814 2025-10-04  ...  2025-10-15 11:11:31.358895+00:00    |       |
+| |         5815 2025-10-04  ...  2025-10-15 11:11:31.358895+00:00    |       |
+| |         5816 2025-10-04  ...  2025-10-15 11:11:31.358895+00:00    |       |
+| |                                                                   |       |
+| |         [5817 rows x 16 columns]                                  |       |
+| | table = 'fact_predictions'                                        |       |
+| +-------------------------------------------------------------------+       |
 +-----------------------------------------------------------------------------+
-LightGBMError: The number of features in data (8) is not the same as it was in 
-training data (7).
-You can set ``predict_disable_shape_check=true`` to discard this error, but 
-please be aware what you are doing.
+ConversionException: Conversion Error: Could not convert 'datetime' to type 
+TIMESTAMP WITH TIME ZONE

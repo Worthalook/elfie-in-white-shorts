@@ -6,7 +6,6 @@ TEAM_FEATURES = [
   "opp_team_gf_5","opp_team_ga_5","opp_goalie_ga_smooth"
 ]
 
-
 def _ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     out["date"] = pd.to_datetime(out["date"], errors="coerce", dayfirst=True)

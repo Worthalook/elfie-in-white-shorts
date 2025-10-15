@@ -6,9 +6,11 @@ from ..utils.validation import REQUIRED_YTD_COLUMNS, ensure_columns
 def load_ytd(csv_path: str | Path) -> pd.DataFrame:
     df = pd.read_csv(csv_path)
     ensure_columns(df, REQUIRED_YTD_COLUMNS)
-    df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
     
-   
+    # was: df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors="coerce")
+    df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d", errors="coerce")
+
+    
     # add these casts
     for c in ["game_id", "player_id", "team", "opponent", "name"]:
         if c in df.columns:

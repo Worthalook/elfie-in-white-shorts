@@ -94,14 +94,13 @@ def tomorrow(
                    "team_ga_5": "mean",
                    "opp_team_gf_5": "mean",
                    "opp_team_ga_5": "mean",
-                  # "opp_goalie_ga_5": "mean",      # if you’re using this name, keep it consistent!
                    "opp_goalie_ga_smooth": "mean", # if THIS is your name, use this instead (don’t have both)
                })
     )
 
     # IMPORTANT: ensure you have only one goalie feature name; pick ONE and use it everywhere.
     # e.g., use "opp_goalie_ga_smooth" consistently:
-    team_feats = team_feats.drop(columns=[c for c in ["opp_goalie_ga_smooth"] if c in team_feats])
+    team_feats = team_feats.drop(columns=[c for c in ["goal_tending_goals_against"] if c in team_feats])
 
     team_df = team_target.merge(team_feats, on=keys, how="left")
 

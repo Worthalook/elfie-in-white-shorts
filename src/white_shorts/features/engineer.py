@@ -2,9 +2,10 @@ from __future__ import annotations
 import pandas as pd
 
 TEAM_FEATURES = [
-    "days_off_team","team_gf_5","team_ga_5",
-    "opp_team_gf_5","opp_team_ga_5","opp_goalie_ga_smooth"
+  "home_or_away","days_off_team","team_gf_5","team_ga_5",
+  "opp_team_gf_5","opp_team_ga_5","opp_goalie_ga_smooth"
 ]
+
 
 def _ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()

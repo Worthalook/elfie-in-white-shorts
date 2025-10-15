@@ -1,8 +1,6 @@
 from __future__ import annotations
 import pandas as pd
 
-# TODO: implement real SportsData fetch
-# For now, accept a list of date strings and return empty DF with correct schema
 def fetch_recent(dates: list[str]) -> pd.DataFrame:
     cols = [
         "game_id","team","opponent","player_id","name","date","minutes",

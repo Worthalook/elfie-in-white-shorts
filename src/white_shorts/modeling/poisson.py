@@ -3,7 +3,6 @@ import json
 from scipy.stats import poisson
 
 def poisson_quantiles(lmbda: float, q_low: float = 0.10, q_high: float = 0.90) -> tuple[float,float]:
-    # guard for tiny lambda
     mu = max(float(lmbda), 1e-8)
     q10 = poisson.ppf(q_low, mu=mu)
     q90 = poisson.ppf(q_high, mu=mu)

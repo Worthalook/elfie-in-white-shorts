@@ -9,3 +9,6 @@ statsmodels
 typer[all]
 requests
 pydantic
+fastapi
+uvicorn
+joblib

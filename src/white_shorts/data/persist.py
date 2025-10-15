@@ -12,7 +12,6 @@ def _connect() -> duckdb.DuckDBPyConnection:
 
 def init_db() -> None:
     con = _connect()
-    # Create tables if not exists
     con.execute("""
     CREATE TABLE IF NOT EXISTS fact_predictions AS SELECT * FROM (
         SELECT ''::VARCHAR as target, DATE '1970-01-01' as date, ''::VARCHAR as game_id,

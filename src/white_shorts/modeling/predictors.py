@@ -7,7 +7,6 @@ def predict_player_counts(model_bundle, df_features: pd.DataFrame, run_id: str, 
     X = df_features[model_bundle.features].fillna(0)
     lam = model_bundle.model.predict(X)
     q10, q90 = zip(*[poisson_quantiles(float(l)) for l in lam]) if len(lam) else ([], [])
-
     out = df_features[["date","game_id","team","opponent","player_id","name"]].copy()
     out["target"] = target
     out["model_name"] = model_bundle.model_name
@@ -22,13 +21,11 @@ def predict_player_counts(model_bundle, df_features: pd.DataFrame, run_id: str, 
     return out
 
 def predict_match_totals(home_bundle, away_bundle, df_match_rows: pd.DataFrame, run_id: str) -> pd.DataFrame:
-    # df_match_rows: one row per (game_id, team, opponent, home_or_away) with engineered team features
     Xh = df_match_rows[home_bundle.features].fillna(0)
     Xa = df_match_rows[away_bundle.features].fillna(0)
     lam_h = home_bundle.model.predict(Xh)
     lam_a = away_bundle.model.predict(Xa)
     lam_total = lam_h + lam_a
-
     q10, q90 = zip(*[poisson_quantiles(float(l)) for l in lam_total]) if len(lam_total) else ([], [])
     out = df_match_rows[["date","game_id","team","opponent"]].copy()
     out["player_id"] = None

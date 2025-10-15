@@ -16,7 +16,7 @@ app = typer.Typer(help="Prediction commands")
 
 @app.command()
 def tomorrow(
-    ytd_csv: str = typer.Option("data/NHL_YTD.csv", help="Path to last season CSV"),
+    ytd_csv: str = typer.Option("data/NHL_2023_24.csv", help="Path to last season CSV"),
     date: str = typer.Option(None, help="Prediction slate date (YYYY-MM-DD)"),
 ):
     """Scaffold end-to-end predict: trains quickly from YTD + predicts for (naive) slate from recent."""

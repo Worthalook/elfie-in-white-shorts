@@ -12,7 +12,7 @@ from ..modeling.targets import Target
 app = typer.Typer(help="Training commands")
 
 @app.command()
-def all(csv_path: str = typer.Option("data/NHL_YTD.csv", help="Path to last season CSV")):
+def all(csv_path: str = typer.Option("data/NHL_2023_24.csv", help="Path to last season CSV")):
     """Train minimal models for player counts and team goals (for totals)."""
     init_db()
     df = load_ytd(csv_path)

@@ -8,7 +8,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e .
 pip install -r requirements.txt
 
-# Place your last-season CSV at data/NHL_YTD.csv
+# Place your last-season CSV at data/NHL_2023_24.csv
 # Then:
 ws train all
 ws predict tomorrow --date 2025-10-15

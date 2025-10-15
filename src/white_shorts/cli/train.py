@@ -18,30 +18,35 @@ def all(csv_path: str = typer.Option("data/NHL_2023_24.csv", help="Path to last 
     df = load_ytd(csv_path)
     df_feat = engineer_minimal(df)
 
-    # Keys that define a team-game row
-    TEAM_KEYS = ["date","game_id","team","opponent","home_or_away"]
+    
+    # AFTER (keeps TEAM_FEATURES)
+    keys = ["date","game_id","team","opponent","home_or_away"]
 
-    # 1) target (naive proxy for now)
+    # Target: proxy using summed points (replace with real team GF when available)
     team_target = (
-    df_feat.groupby(TEAM_KEYS, as_index=False)["points"]
-          .sum()
-          .rename(columns={"points":"team_goals"})
+        df_feat.groupby(keys, as_index=False)["points"].sum()
+               .rename(columns={"points": "team_goals"})
     )
 
-    # 2) team-level features (aggregate player rows → team row)
-    # mean works fine for these rolling/rest features; you can switch to max/median if preferred
-
-    team_features = (
-        df_feat.groupby(TEAM_KEYS, as_index=False)[TEAM_FEATURES]
-              .mean()
+    # Features: aggregate engineered columns at team-game level
+    team_feats = (
+        df_feat.groupby(keys, as_index=False)
+               .agg({
+                   "home_or_away": "first",
+                   "days_off_team": "max",
+                   "team_gf_5": "mean",
+                   "team_ga_5": "mean",
+                   "opp_team_gf_5": "mean",
+                   "opp_team_ga_5": "mean",
+                   "opp_goalie_ga_smooth": "mean",
+               })
     )
 
-    # 3) merge features + target
-    team_df = team_target.merge(team_features, on=TEAM_KEYS, how="left")
+    team_df = team_target.merge(team_feats, on=keys, how="left")
 
-    # 4) train on the merged team_df
     bteam = train_team_goals(team_df, TEAM_FEATURES, target="team_goals", version=settings.MODEL_VERSION_TAG)
     path_team = save_model(bteam)
+
     typer.echo(f"Trained & saved team goals model → {path_team}")
     # Player models
     for t in [Target.POINTS, Target.GOALS, Target.ASSISTS, Target.SHOTS]:

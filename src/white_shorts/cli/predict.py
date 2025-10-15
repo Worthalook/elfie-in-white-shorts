@@ -33,10 +33,29 @@ def tomorrow(
     bundle_assists = train_player_count(df_feat, PLAYER_FEATURES, target="assists")
     bundle_shots = train_player_count(df_feat, PLAYER_FEATURES, target="shots_on_goal")
 
-    team = df_feat.groupby(["date","game_id","team","opponent","home_or_away"], as_index=False)["points"].sum()
-    team = team.rename(columns={"points":"team_goals"})
-    bundle_team_home = train_team_goals(team, TEAM_FEATURES, target="team_goals")
+    keys = ["date","game_id","team","opponent","home_or_away"]
+    team_target = (
+        df_feat.groupby(keys, as_index=False)["points"].sum()
+           .rename(columns={"points": "team_goals"})
+    )
+    team_feats = (
+        df_feat.groupby(keys, as_index=False)
+           .agg({
+               "home_or_away": "first",
+               "days_off_team": "max",
+               "team_gf_5": "mean",
+               "team_ga_5": "mean",
+               "opp_team_gf_5": "mean",
+               "opp_team_ga_5": "mean",
+               "opp_goalie_ga_smooth": "mean",
+           })
+    )
+
+    team_df = team_target.merge(team_feats, on=keys, how="left")
+
+    bundle_team_home = _load_or_train("lgbm_poisson_team_goals", train_team_goals, team_df, TEAM_FEATURES, target="team_goals")
     bundle_team_away = bundle_team_home
+
 
     # Build naive slate from "recent" (empty by default; in real use, call projections API)
     recent = fetch_recent([date] if date else [])
@@ -55,22 +74,24 @@ def tomorrow(
     preds_shots = predict_player_counts(bundle_shots, player_rows, run_id, target="shots_on_goal")
 
     # Match totals: collapse to team rows (use last known features as proxy)
-    team_rows = team[["date","game_id","team","opponent","home_or_away"] + TEAM_FEATURES].drop_duplicates()
+    team_rows = team_df[keys + TEAM_FEATURES].drop_duplicates()
     preds_totals = predict_match_totals(bundle_team_home, bundle_team_away, team_rows, run_id)
+    #>>#team_rows = team[["date","game_id","team","opponent","home_or_away"] + TEAM_FEATURES].drop_duplicates()
+    #>>#preds_totals = predict_match_totals(bundle_team_home, bundle_team_away, team_rows, run_id)
 
     TEAM_KEYS = ["date","game_id","team","opponent","home_or_away"]
 
     # Build team target (not strictly needed for prediction, but harmless)
     team_target = (
         df_feat.groupby(TEAM_KEYS, as_index=False)["points"]
-          .sum()
-          .rename(columns={"points":"team_goals"})
-)
+            .sum()
+            .rename(columns={"points":"team_goals"})
+    )
 
     # Team-level features aggregated from player rows
     team_features = (
         df_feat.groupby(TEAM_KEYS, as_index=False)[TEAM_FEATURES]
-              .mean()
+                .mean()
     )
 
     # Rows used for match totals prediction (must include TEAM_FEATURES)
@@ -89,7 +110,7 @@ def tomorrow(
     # Team-level features aggregated from player rows
     team_features = (
         df_feat.groupby(TEAM_KEYS, as_index=False)[TEAM_FEATURES]
-              .mean()
+                .mean()
     )
 
     # Rows used for match totals prediction (must include TEAM_FEATURES)

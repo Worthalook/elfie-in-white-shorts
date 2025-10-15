@@ -80,8 +80,10 @@ def tomorrow(
     TEAM_KEYS = ["date","game_id","team","opponent","home_or_away"]
 
     
-    # Build team target (not strictly needed for prediction, but harmless) team_target = (
-    df_feat.groupby(TEAM_KEYS, as_index=False)["points"].sum().rename(columns={"points":"team_goals"})
+    # Build team target (not strictly needed for prediction, but harmless) 
+    team_target = (
+        df_feat.groupby(TEAM_KEYS, as_index=False)["points"].sum().rename(columns={"points":"team_goals"})
+    )
     #)
 
     # Team-level features aggregated from player rows

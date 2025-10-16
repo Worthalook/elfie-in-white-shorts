@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os
 import datetime as dt
+from datetime import datetime, timedelta
 from typing import Optional, Tuple
 import pandas as pd
 
@@ -19,6 +20,9 @@ def _fmt_sportsdata_date(date_str: str) -> tuple[str, pd.Timestamp]:
     api_token = f"{d.year}-{mon}-{d.day:02d}"
     return api_token, d.normalize()
 
+def to_mon_date(d: datetime) -> str:
+    return d.strftime("%Y-%b-%d")  # e.g., 2025-May-07
+
 def fetch_projections_by_date(date_str: str) -> pd.DataFrame:
     """Fetch active slate (players and games) from SportsData.io for a given date.
 
@@ -36,8 +40,11 @@ def fetch_projections_by_date(date_str: str) -> pd.DataFrame:
     base = os.getenv("SPORTS_DATA_BASE", "https://api.sportsdata.io")
     dtoken = _fmt_sportsdata_date(date_str)
 
+    d = pd.to_datetime(date_str, dayfirst=True, errors="coerce")
+    proj_date_as_str = to_mon_date(d)
+    print(f"DATE STRING for PREDICTION DAY IS: ${proj_date_as_str} for 3.0")
     # Endpoint from your earlier example (fantasy PlayerGameStatsByDate)
-    url = f"{base}/api/nhl/fantasy/json/PlayerGameStatsByDate/{dtoken}?key={api_key}"
+    url = f"{base}/api/nhl/fantasy/json/PlayerGameStatsByDate/{proj_date_as_str}?key={api_key}"
     if requests is None:
         raise RuntimeError("requests module not available to fetch projections")
 

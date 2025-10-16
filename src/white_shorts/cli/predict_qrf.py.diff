@@ -1,0 +1,63 @@
+    *** Begin Patch
+    *** Update File: src/white_shorts/cli/predict_qrf.py
+    @@
+     from ..modeling.trainers_qrf import train_player_qrf, qrf_predict_with_quantiles
+     from ..modeling.io_qrf import save_qrf, load_latest
+     from ..modeling.ets_totals import fit_team_ets, forecast_next
+    +from ..data.projections import fetch_projections_by_date
+    @@
+-    def tomorrow(date: str = typer.Option(None, help="YYYY-MM-DD for slate (baseline uses YTD only)")):
++    def tomorrow(date: str = typer.Option(None, help="YYYY-MM-DD slate date; used to fetch projections and filter players/teams")):
+         init_db()
+         ytd_csv = os.getenv("WS_YTD_CSV", "data/NHL_YTD.csv")
+         df_ytd = load_ytd(ytd_csv)
+         df_feat = engineer_minimal(df_ytd)
+
++        # If a date is provided, fetch projections and filter to just those players/teams
++        proj_df = None
++        if date:
++            try:
++                proj_df = fetch_projections_by_date(date)
++            except Exception as e:
++                typer.echo(f"[warn] projections fetch failed: {e}. Proceeding without filtering.")
++
++        if proj_df is not None and not proj_df.empty:
++            # Filter players
++            df_feat["player_id"] = df_feat["player_id"].astype(str)
++            allow_p = set(proj_df["player_id"].astype(str))
++            before_n = len(df_feat)
++            df_feat = df_feat[df_feat["player_id"].isin(allow_p)]
++            typer.echo(f"Filtered players by projections: {before_n} -> {len(df_feat)}")
++
++            # For teams/totals, keep only the projected games
++            if "game_id" in proj_df.columns and proj_df["game_id"].notna().any():
++                allow_g = set(proj_df["game_id"].dropna().astype(int))
++                # df_feat has game_id numeric already from YTD
++                df_feat["game_id"] = pd.to_numeric(df_feat["game_id"], errors="coerce")
++                df_feat = df_feat[df_feat["game_id"].isin(allow_g)]
++
++        # If filtering removed everything, bail out early
++        if df_feat.empty:
++            typer.echo("No rows to predict after projections filtering; nothing to do.")
++            return
++
+         run_id = os.getenv("WS_RUN_ID", str(abs(hash(datetime.utcnow().isoformat()))))
+    @@
+         preds_points  = _player_block("points")
+         preds_goals   = _player_block("goals")
+         preds_assists = _player_block("assists")
+         preds_shots   = _player_block("shots_on_goal")
+
+         # Team totals ETS baseline
+         keys = ["date","game_id","team","opponent","home_or_away"]
+-        team_target = (df_feat.groupby(keys, as_index=False)["points"]
++        team_target = (df_feat.groupby(keys, as_index=False)["points"]
+                        .sum().rename(columns={"points":"team_goals"}))
+         team_series = team_target.sort_values("date")
+
+         ets_models = {}
+         for team, grp in team_series.groupby("team"):
+             s = grp[["date","team_goals"]].dropna().sort_values("date")
+             if len(s) >= 5:
+                 ets_models[team] = fit_team_ets(s, team)
+    *** End Patch

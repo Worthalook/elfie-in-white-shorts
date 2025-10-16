@@ -34,7 +34,7 @@ def _load_or_train(prefix: str, df_feat: pd.DataFrame, features: list[str], targ
 @app.command()
 def tomorrow(date: str = typer.Option(None, help="YYYY-MM-DD slate date; used to fetch projections and filter players/teams")):
     init_db()
-    ytd_csv = os.getenv("WS_YTD_CSV", "data/NHL_YTD.csv")
+    ytd_csv = os.getenv("WS_YTD_CSV", "data/NHL_2023_24.csv")
     df_ytd = load_ytd(ytd_csv)
     df_feat = engineer_minimal(df_ytd)
 
@@ -61,6 +61,25 @@ def tomorrow(date: str = typer.Option(None, help="YYYY-MM-DD slate date; used to
     if df_feat.empty:
         typer.echo("No rows to predict after projections filtering; nothing to do.")
         return
+
+    # after projections filtering and before run_id is created
+
+    from pandas import to_datetime
+
+    slate_date = None
+    if date:
+        # robust parse: accept "YYYY-MM-DD", "DD/MM/YYYY", "DD/MM", etc.
+        # dayfirst=True handles AU-style dates like 15/10/2025 or 15/10
+        d_parsed = to_datetime(date, dayfirst=True, errors="coerce")
+        # If year is missing (like "15/10"), assume current year
+        if pd.isna(d_parsed):
+            raise typer.BadParameter(f"Could not parse date: {date}")
+        slate_date = d_parsed.normalize()
+
+    if slate_date is not None:
+        # force predictions to carry the slate date
+        df_feat["date"] = slate_date
+
 
     run_id = os.getenv("WS_RUN_ID", str(abs(hash(datetime.utcnow().isoformat()))))
 

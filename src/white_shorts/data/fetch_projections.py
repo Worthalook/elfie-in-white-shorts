@@ -1,9 +1,22 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 import os
 import pandas as pd
 import requests
 
+
 API_KEY = os.getenv("SPORTSDATA_API_KEY", "")
+
+def _fmt_sportsdata_date(date_str: str) -> tuple[str, pd.Timestamp]:
+    import pandas as pd
+    d = pd.to_datetime(date_str, dayfirst=True, errors="coerce")
+    if pd.isna(d):
+        raise ValueError(f"Unparseable date: {date_str}")
+    # SportsData wants e.g. 2025-Oct-15
+    mon = d.strftime("%b")  # Oct
+    api_token = f"{d.year}-{mon}-{d.day:02d}"
+    return api_token, d.normalize()
+
+
 
 def _get(url: str) -> list[dict]:
     headers = {"Ocp-Apim-Subscription-Key": API_KEY} if API_KEY else {}
@@ -12,6 +25,8 @@ def _get(url: str) -> list[dict]:
     return r.json()
 
 def fetch_player_projections_by_date(date_str: str) -> pd.DataFrame:
+    api_token, slate_dt = _fmt_sportsdata_date(date_str)
+    url = f"{base}/api/nhl/fantasy/json/PlayerGameStatsByDate/{api_token}?key={api_key}"
     if not API_KEY:
         return pd.DataFrame(columns=["date","game_id","team","opponent","player_id","name"])
     base = "https://api.sportsdata.io/api/nhl"
@@ -32,13 +47,14 @@ def fetch_player_projections_by_date(date_str: str) -> pd.DataFrame:
     rows = []
     for d in data:
         rows.append({
-            "date": date_str,
-            "game_id": str(d.get("GameID", d.get("GameId", ""))),
-            "team": str(d.get("Team", d.get("TeamAbbreviation", ""))).strip(),
-            "opponent": str(d.get("Opponent", d.get("OpponentAbbreviation", ""))).strip(),
-            "player_id": str(d.get("PlayerID", d.get("PlayerId", ""))),
-            "name": str(d.get("Name", d.get("PlayerName", ""))).strip(),
+            "date": slate_dt,  # ← force slate date here too
+            "game_id": game_id,
+            "team": team,
+            "opponent": opp,
+            "player_id": pid,
+            "name": name
         })
+
 
     return pd.DataFrame(rows).drop_duplicates()
 
@@ -47,3 +63,4 @@ def naive_projections_from_recent(recent_df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=["date","game_id","team","opponent","player_id","name"])
     key = ["date","game_id","team","opponent","player_id","name"]
     return recent_df[key].drop_duplicates().reset_index(drop=True)
+

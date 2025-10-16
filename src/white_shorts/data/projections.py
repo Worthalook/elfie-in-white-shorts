@@ -9,14 +9,6 @@ try:
 except Exception as e:
     requests = None  # allow import even if requests isn't installed
 
-def _fmt_sportsdata_date(date_str: str) -> str:
-    # Expect 'YYYY-MM-DD' or similar; convert to 'YYYY-Mon-DD' (e.g., 2025-Oct-07)
-    d = pd.to_datetime(date_str, errors="coerce")
-    if pd.isna(d):
-        # fall back to today
-        d = pd.Timestamp.today()
-    mon = d.strftime("%b")  # Oct
-    return f"{d.year}-{mon}-{d.day:02d}"
 
 def fetch_projections_by_date(date_str: str) -> pd.DataFrame:
     """Fetch active slate (players and games) from SportsData.io for a given date.

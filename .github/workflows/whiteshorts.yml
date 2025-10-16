@@ -39,12 +39,54 @@ jobs:
           # Optional API key if needed later:
           # echo "SPORTSDATA_API_KEY=${{ secrets.SPORTSDATA_API_KEY }}" >> .env
 
+      - name: '*****Compute Melbourne-time window and PREDICT_DATE*************************'
+        id: when
+        run: |
+          HOUR=$(TZ=$TZ date +%H)
+          DSTR=$(TZ=$TZ date +%F' '%T' '%Z)
+          echo "Local time: $DSTR (hour=$HOUR)"
+
+          # Allowed polling window: 19:00–02:59 Melbourne time
+          # - Before midnight (19:00–23:59): forecast for *current* Melbourne date
+          # - After midnight  (00:00–02:59): forecast for *(current Melbourne date - 1 day)*
+          #IN_WINDOW=0
+          #if [ "$HOUR" -ge 17 ] || [ "$HOUR" -le 2 ]; then
+          IN_WINDOW=1
+          #fi
+          echo "in_window=$IN_WINDOW" >> $GITHUB_OUTPUT
+
+          if [ "$HOUR" -le 17 ]; then #games playing today
+            PREDICT_DATE=$(TZ=$TZ date -d "yesterday" +%Y-%b-%d)
+          else
+            PREDICT_DATE=$(TZ=$TZ date +%Y-%b-%d)
+          fi
+          echo "predict_date=$PREDICT_DATE" >> $GITHUB_OUTPUT
+          echo "Computed PREDICT_DATE=$PREDICT_DATE"
+
       - name: Ensure data dir
         run: mkdir -p data/parquet
 
       - name: Run predictions (scaffold)
         run: |
-          ws predict tomorrow --date $(date -d "tomorrow" +%F)
+          python -m white_shorts.cli.train_qrf all --version 0.3.0
+
+      - name: Run predictions (scaffold)
+        env:
+          SPORTSDATA_API_KEY: ${{ secrets.SPORTSDATA_API_KEY }}
+          DATE_MON: ${{ steps.when.outputs.predict_date }}
+        run: |
+          python -m white_shorts.cli.predict_qrf --date DATE_MON
+      - name:  '*****Commit prediction artifacts*************************'
+        if: steps.when.outputs.in_window == '1'
+        run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git pull
+            git add preds/*.csv || true #data/NHL_YTD.csv NHL_2023_24.csv preds/*.csv models/v3.3/* || true
+        
+            TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            git commit -m "Projections job: preds ${TS} (UTC) for ${{ steps.when.outputs.predict_date }}"
+            git push origin main 
 
       - name: Package artifacts
         run: |

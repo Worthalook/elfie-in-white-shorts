@@ -7,7 +7,7 @@ on:
     inputs:
       run_training:
         description: "Also (re)train QRF models?"
-        required: true
+        required: false
         default: "false"
         type: choice
         options: ["false", "true"]

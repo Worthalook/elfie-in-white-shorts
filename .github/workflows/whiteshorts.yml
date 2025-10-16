@@ -66,11 +66,11 @@ jobs:
       - name: Ensure data dir
         run: mkdir -p data/parquet
 
-      - name: Run predictions (scaffold)
+      - name: Train Model
         run: |
           python -m white_shorts.cli.train_qrf all --version 0.3.0
 
-      - name: Run predictions (scaffold)
+      - name: Run predictions 
         env:
           SPORTSDATA_API_KEY: ${{ secrets.SPORTSDATA_API_KEY }}
           DATE_MON: ${{ steps.when.outputs.predict_date }}

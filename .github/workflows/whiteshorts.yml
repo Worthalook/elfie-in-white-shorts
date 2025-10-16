@@ -2,7 +2,7 @@ name: whiteshorts-core
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "initial-testing" ]
   
     #schedule:
     # Run daily at 14:15 UTC (~01:15 Melbourne; adjust as needed for DST)
@@ -86,7 +86,7 @@ jobs:
         
             TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
             git commit -m "Projections job: preds ${TS} (UTC) for ${{ steps.when.outputs.predict_date }}"
-            git push origin main 
+            git push origin initial-testing 
 
       - name: Package artifacts
         run: |

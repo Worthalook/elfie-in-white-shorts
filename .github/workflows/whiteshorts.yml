@@ -160,7 +160,7 @@ jobs:
             #ws log-actuals --date 2025-10-14
 
             # Backfill (range)
-            ws backfill --start 2025-10-04 --end 2025-10-15 --what actuals
+            python -m white_shorts.cli.backfill --start 2025-10-04 --end 2025-10-15 --what actuals
 
             # Dashboards (regenerate export files used by Streamlit portal)
-            ws dashboards --as-of 2025-10-15
+            python -m white_shorts.cli.dashboards --as-of 2025-10-15

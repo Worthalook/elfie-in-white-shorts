@@ -72,7 +72,7 @@ jobs:
 
       - name: Run predictions 
         env:
-          SPORTSDATA_API_KEY: ${{ secrets.SPORTSDATA_API_KEY }}
+          SPORTS_DATA_API_KEY: ${{ secrets.SPORTS_DATA_API_KEY }}
           DATE_MON: ${{ steps.when.outputs.predict_date }}
         run: |
           python -m white_shorts.cli.predict_qrf --date $DATE_MON

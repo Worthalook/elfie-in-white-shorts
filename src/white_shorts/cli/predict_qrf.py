@@ -12,6 +12,7 @@ from ..data.persist import init_db, append, PRED_COLS
 from ..modeling.trainers_qrf import train_player_qrf, qrf_predict_with_quantiles
 from ..modeling.io_qrf import save_qrf, load_latest
 from ..modeling.ets_totals import fit_team_ets, forecast_next
+from ..data.projections import fetch_projections_by_date
 
 app = typer.Typer(help="QRF players + ETS totals predictions (additive CLI)")
 
@@ -31,11 +32,35 @@ def _load_or_train(prefix: str, df_feat: pd.DataFrame, features: list[str], targ
     return b
 
 @app.command()
-def tomorrow(date: str = typer.Option(None, help="YYYY-MM-DD for slate (baseline uses YTD only)")):
+def tomorrow(date: str = typer.Option(None, help="YYYY-MM-DD slate date; used to fetch projections and filter players/teams")):
     init_db()
     ytd_csv = os.getenv("WS_YTD_CSV", "data/NHL_YTD.csv")
     df_ytd = load_ytd(ytd_csv)
     df_feat = engineer_minimal(df_ytd)
+
+    # Projections-based filtering (players + games)
+    proj_df = None
+    if date:
+        try:
+            proj_df = fetch_projections_by_date(date)
+        except Exception as e:
+            typer.echo(f"[warn] projections fetch failed: {e}. Proceeding without filtering.")
+
+    if proj_df is not None and not proj_df.empty:
+        df_feat["player_id"] = df_feat["player_id"].astype(str)
+        allow_p = set(proj_df["player_id"].astype(str))
+        before_n = len(df_feat)
+        df_feat = df_feat[df_feat["player_id"].isin(allow_p)]
+        typer.echo(f"Filtered players by projections: {before_n} -> {len(df_feat)}")
+
+        if "game_id" in proj_df.columns and proj_df["game_id"].notna().any():
+            allow_g = set(proj_df["game_id"].dropna().astype(int))
+            df_feat["game_id"] = pd.to_numeric(df_feat["game_id"], errors="coerce")
+            df_feat = df_feat[df_feat["game_id"].isin(allow_g)]
+
+    if df_feat.empty:
+        typer.echo("No rows to predict after projections filtering; nothing to do.")
+        return
 
     run_id = os.getenv("WS_RUN_ID", str(abs(hash(datetime.utcnow().isoformat()))))
 
@@ -62,7 +87,6 @@ def tomorrow(date: str = typer.Option(None, help="YYYY-MM-DD for slate (baseline
     preds_assists = _player_block("assists")
     preds_shots   = _player_block("shots_on_goal")
 
-    # Team totals ETS baseline
     keys = ["date","game_id","team","opponent","home_or_away"]
     team_target = (df_feat.groupby(keys, as_index=False)["points"]
                    .sum().rename(columns={"points":"team_goals"}))
@@ -94,7 +118,6 @@ def tomorrow(date: str = typer.Option(None, help="YYYY-MM-DD for slate (baseline
 
     all_preds = pd.concat([preds_points, preds_goals, preds_assists, preds_shots, preds_totals], ignore_index=True)
 
-    # Align to expected columns for persistence
     for c in PRED_COLS:
         if c not in all_preds.columns:
             all_preds[c] = pd.NA

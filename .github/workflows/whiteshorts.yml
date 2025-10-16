@@ -36,7 +36,7 @@ jobs:
       SPORTS_DATA_BASE: https://api.sportsdata.io
       # API key should be stored in repo/org secrets
       SPORTS_DATA_API_KEY: ${{ secrets.SPORTS_DATA_API_KEY }}
-      INPUT_OVERRIDE_DATE: '2025-Oct-15'
+      INPUT_OVERRIDE_DATE: '2025-Oct-14'
     steps:
       - name: Checkout
         uses: actions/checkout@v4

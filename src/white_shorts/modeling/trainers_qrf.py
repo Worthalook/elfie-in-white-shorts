@@ -35,10 +35,11 @@ def train_player_qrf(df: pd.DataFrame, features: list[str], target: str, version
 
 
 def qrf_predict_with_quantiles(bundle: ModelBundle, X: pd.DataFrame, q_low: float = 0.10, q_high: float = 0.90):
-    Xv = X[bundle.features].fillna(0).to_numpy()    # <- use numpy
-    est = np.stack([t.predict(Xv) for t in bundle.model.estimators_], axis=1)
+    # Convert to numpy array to silence sklearn's feature-name warning
+    X = X[bundle.features].fillna(0).to_numpy()
+    est = np.stack([t.predict(X) for t in bundle.model.estimators_], axis=1)  # (n_samples, n_trees)
     mean = est.mean(axis=1)
-    q10  = np.quantile(est, q_low,  axis=1)
-    q90  = np.quantile(est, q_high, axis=1)
+    q10 = np.quantile(est, q_low, axis=1)
+    q90 = np.quantile(est, q_high, axis=1)
     return mean, q10, q90
 

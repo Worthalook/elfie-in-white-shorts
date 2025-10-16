@@ -1,80 +1,60 @@
 from __future__ import annotations
 import os
-import datetime as dt
-from datetime import datetime, timedelta
-from typing import Optional, Tuple
 import pandas as pd
 
 try:
     import requests
-except Exception as e:
-    requests = None  # allow import even if requests isn't installed
-    
-def _fmt_sportsdata_date(date_str: str) -> tuple[str, pd.Timestamp]:
-    import pandas as pd
+except Exception:
+    requests = None
+
+def _parse_date(date_str: str) -> pd.Timestamp:
     d = pd.to_datetime(date_str, dayfirst=True, errors="coerce")
     if pd.isna(d):
         raise ValueError(f"Unparseable date: {date_str}")
-    # SportsData wants e.g. 2025-Oct-15
-    mon = d.strftime("%b")  # Oct
-    api_token = f"{d.year}-{mon}-{d.day:02d}"
-    return api_token, d.normalize()
+    return d.normalize()
 
-def to_mon_date(d: datetime) -> str:
-    return d.strftime("%Y-%b-%d")  # e.g., 2025-May-07
+def _sportsdata_token(d: pd.Timestamp) -> str:
+    mon = d.strftime("%b")
+    return f"{d.year}-{mon}-{d.day:02d}"
 
 def fetch_projections_by_date(date_str: str) -> pd.DataFrame:
-    """Fetch active slate (players and games) from SportsData.io for a given date.
+    """Authoritative slate from SportsData.io PlayerGameProjectionStatsByDate.
+    Returns columns: ['date','game_id','team','opponent','player_id','name']
 
-    Environment:
-      - SPORTS_DATA_API_KEY: API key (required)
-      - SPORTS_DATA_BASE: base URL (optional, defaults to 'https://api.sportsdata.io')
-
-    Returns a DataFrame with at least:
-      ['date','game_id','team','opponent','player_id','name']
+    Requires env: SPORTS_DATA_API_KEY
+    Optional: SPORTS_DATA_BASE
     """
+    if requests is None:
+        raise RuntimeError("requests not installed; cannot fetch projections")
+
     api_key = os.getenv("SPORTS_DATA_API_KEY")
     if not api_key:
-        raise RuntimeError("SPORTS_DATA_API_KEY is not set in environment")
+        raise RuntimeError("SPORTS_DATA_API_KEY is not set")
 
     base = os.getenv("SPORTS_DATA_BASE", "https://api.sportsdata.io")
-    dtoken = _fmt_sportsdata_date(date_str)
+    d = _parse_date(date_str)
+    token = _sportsdata_token(d)
+    url = f"{base}/api/nhl/fantasy/json/PlayerGameProjectionStatsByDate/{token}?key={api_key}"
 
-    d = pd.to_datetime(date_str, dayfirst=True, errors="coerce")
-    proj_date_as_str = to_mon_date(d)
-    print(f"DATE STRING for PREDICTION DAY IS: ${proj_date_as_str} for 3.0")
-    # Endpoint from your earlier example (fantasy PlayerGameStatsByDate)
-    url = f"{base}/api/nhl/fantasy/json/PlayerGameStatsByDate/{proj_date_as_str}?key={api_key}"
-    if requests is None:
-        raise RuntimeError("requests module not available to fetch projections")
+    r = requests.get(url, timeout=30)
+    r.raise_for_status()
+    js = r.json()
 
-    resp = requests.get(url, timeout=30)
-    resp.raise_for_status()
-    js = resp.json()
-
-    # Normalize
     rows = []
-    for r in js:
-        # Defensive gets, with common SportsData fields
-        game_id = r.get("GameID") or r.get("GameId") or r.get("GameId")
-        team = r.get("Team") or r.get("TeamID") or r.get("TeamAbbreviation")
-        opp = r.get("Opponent") or r.get("OpponentAbbreviation")
-        pid = r.get("PlayerID") or r.get("PlayerId")
-        name = r.get("Name") or r.get("PlayerName") or r.get("ShortName")
+    for rec in js:
+        game_id = rec.get("GameID") or rec.get("GameId")
+        team = rec.get("Team") or rec.get("TeamAbbreviation")
+        opp  = rec.get("Opponent") or rec.get("OpponentAbbreviation")
+        pid  = rec.get("PlayerID") or rec.get("PlayerId")
+        name = rec.get("Name") or rec.get("ShortName") or rec.get("PlayerName")
         rows.append({
-            "date": pd.to_datetime(date_str),
-            "game_id": game_id,
-            "team": team,
-            "opponent": opp,
-            "player_id": pid,
-            "name": name
+            "date": d,
+            "game_id": pd.to_numeric(game_id, errors="coerce"),
+            "team": None if team is None else str(team),
+            "opponent": None if opp is None else str(opp),
+            "player_id": None if pid is None else str(pid),
+            "name": name,
         })
-    df = pd.DataFrame(rows).dropna(subset=["player_id", "team"])
-    # Coerce types to be merge-friendly with your YTD
-    if "game_id" in df.columns:
-        df["game_id"] = pd.to_numeric(df["game_id"], errors="coerce")
-    df["player_id"] = df["player_id"].astype(str)
-    df["team"] = df["team"].astype(str)
-    if "opponent" in df.columns:
-        df["opponent"] = df["opponent"].astype(str)
+    df = pd.DataFrame(rows)
+    df = df.dropna(subset=["player_id","team"]).reset_index(drop=True)
     return df

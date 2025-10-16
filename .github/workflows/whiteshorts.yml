@@ -44,6 +44,9 @@ jobs:
           fetch-depth: 0
           # Keep credentials so we can push with GITHUB_TOKEN
           persist-credentials: true
+              
+      - name: Add src to PYTHONPATH
+        run: echo "PYTHONPATH=${PYTHONPATH}:$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v5

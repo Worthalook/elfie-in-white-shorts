@@ -98,11 +98,11 @@ jobs:
       # ---------- PREP DATA ----------
       - name: Fetch slate (players & games) for slate date
         run: |
-          python -m white_shorts.cli.fetch_slate by_date "2025-10-16"
+          python -m white_shorts.cli.fetch_slate "2025-10-16"
 
       - name: Update current-season with yesterday actuals
         run: |
-          python -m white_shorts.cli.update_history by_date "${{ steps.dates.outputs.yesterday }}"
+          python -m white_shorts.cli.update_history "${{ steps.dates.outputs.yesterday }}"
 
       # ---------- (OPTIONAL) TRAIN ----------
       - name: Train QRF models (optional)

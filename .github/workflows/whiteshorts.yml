@@ -1,4 +1,4 @@
-﻿name: WS daily pipeline (AEST)
+name: WS daily pipeline (AEST)
 
 on:
   push:
@@ -102,7 +102,7 @@ jobs:
 
       - name: Update current-season with yesterday actuals
         run: |
-          python -m white_shorts.cli.update_history "${{ steps.dates.outputs.yesterday }}"
+          python -m white_shorts.cli.update_history "2025-10-15"
 
       # ---------- (OPTIONAL) TRAIN ----------
       - name: Train QRF models (optional)

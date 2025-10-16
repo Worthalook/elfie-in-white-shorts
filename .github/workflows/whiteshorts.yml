@@ -134,6 +134,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+       
       # ---------- COMMIT CSVs TO REPO (NOT MODELS) ----------
       - name: Ensure models are ignored
         run: |
@@ -152,3 +153,14 @@ jobs:
             git commit -m "Add predictions for ${{ steps.dates.outputs.slate }} [skip ci]"
             git push origin HEAD:${{ github.ref_name }}
           fi
+
+      - name: Process Metrics
+        run: |
+          # Log actuals (yesterday → last slate)
+            #ws log-actuals --date 2025-10-14
+
+            # Backfill (range)
+            ws backfill --start 2025-10-04 --end 2025-10-15 --what actuals
+
+            # Dashboards (regenerate export files used by Streamlit portal)
+            ws dashboards --as-of 2025-10-15

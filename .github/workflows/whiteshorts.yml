@@ -7,7 +7,7 @@ on:
     inputs:
       run_training:
         description: "Also (re)train QRF models?"
-        required: true
+        required: false
         default: "false"
         type: choice
         options: ["false", "true"]
@@ -117,7 +117,7 @@ jobs:
           if [ ! -f "$SLATE_PATH" ]; then
             echo "Slate not found: $SLATE_PATH"; exit 1
           fi
-          python -m white_shorts.cli.predict_from_slate slate "$SLATE_PATH" \
+          python -m white_shorts.cli.predict_from_slate "$SLATE_PATH" \
             --ytd-csv "data/NHL_2023_24.csv" \
             --out-dir "${{ env.WS_PARQUET_DIR }}"
 

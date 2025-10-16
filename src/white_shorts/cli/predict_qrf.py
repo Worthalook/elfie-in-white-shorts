@@ -102,7 +102,7 @@ def tomorrow(date: str = typer.Option(None, help="YYYY-MM-DD (or 15/10/2025) sla
         series = grp[["date","team_goals"]].dropna().sort_values("date")
         if len(series) >= 5:
             ets_models[team] = fit_team_ets(series, team)
-
+    run_id = os.getenv("WS_RUN_ID", str(abs(hash(datetime.utcnow().isoformat()))))
     rows = []
     for _, r in games.iterrows():
         lam = np.nan
@@ -122,7 +122,7 @@ def tomorrow(date: str = typer.Option(None, help="YYYY-MM-DD (or 15/10/2025) sla
     preds_totals = pd.DataFrame(rows)
 
     #####################################################################
-    run_id = os.getenv("WS_RUN_ID", str(abs(hash(datetime.utcnow().isoformat()))))
+    
 
 
     def _player_block(target: str):

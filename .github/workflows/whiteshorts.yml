@@ -118,7 +118,7 @@ jobs:
             echo "Slate not found: $SLATE_PATH"; exit 1
           fi
           python -m white_shorts.cli.predict_from_slate slate "$SLATE_PATH" \
-            --ytd-csv "data/NHL_YTD.csv" \
+            --ytd-csv "data/NHL_2023_24.csv" \
             --out-dir "${{ env.WS_PARQUET_DIR }}"
 
       # ---------- COLLECT & UPLOAD ARTIFACT ----------

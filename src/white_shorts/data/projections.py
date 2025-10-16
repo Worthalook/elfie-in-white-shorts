@@ -8,7 +8,16 @@ try:
     import requests
 except Exception as e:
     requests = None  # allow import even if requests isn't installed
-
+    
+def _fmt_sportsdata_date(date_str: str) -> tuple[str, pd.Timestamp]:
+    import pandas as pd
+    d = pd.to_datetime(date_str, dayfirst=True, errors="coerce")
+    if pd.isna(d):
+        raise ValueError(f"Unparseable date: {date_str}")
+    # SportsData wants e.g. 2025-Oct-15
+    mon = d.strftime("%b")  # Oct
+    api_token = f"{d.year}-{mon}-{d.day:02d}"
+    return api_token, d.normalize()
 
 def fetch_projections_by_date(date_str: str) -> pd.DataFrame:
     """Fetch active slate (players and games) from SportsData.io for a given date.

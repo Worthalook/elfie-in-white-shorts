@@ -85,8 +85,8 @@ jobs:
               if pd.isna(d): raise SystemExit(f"Unparseable override_date: {override}")
               slate = d.date()
           else:
-              slate = (now_au + timedelta(days=1)).date()  # tomorrow AU
-          yday  = (now_au - timedelta(days=1)).date()      # yesterday AU
+              slate = (now_au - timedelta(days=1)).date()  # yesterday AU
+          yday  = (now_au - timedelta(days=2)).date()      # -2 AU
           print(f"slate={slate}  yesterday={yday}")
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               fh.write(f"slate={slate}\n")
@@ -98,11 +98,11 @@ jobs:
       # ---------- PREP DATA ----------
       - name: Fetch slate (players & games) for slate date
         run: |
-          python -m white_shorts.cli.fetch_slate by_date "${{ steps.dates.outputs.slate }}"
+          python -m white_shorts.cli.fetch_slate "${{ steps.dates.outputs.slate }}"
 
       - name: Update current-season with yesterday actuals
         run: |
-          python -m white_shorts.cli.update_history by_date "${{ steps.dates.outputs.yesterday }}"
+          python -m white_shorts.cli.update_history "${{ steps.dates.outputs.yesterday }}"
 
       # ---------- (OPTIONAL) TRAIN ----------
       - name: Train QRF models (optional)

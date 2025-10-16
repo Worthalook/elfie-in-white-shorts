@@ -32,7 +32,7 @@
           password: ${{ secrets.SMTP_PASS }}
           subject: "WhiteShorts ❌ FAILED run ${{ github.run_id }}"
           to: ${{ secrets.EMAIL_TO }}
-          from: WhiteShorts Bot <${{ secrets.EMAIL_FROM }}>
+          from: Elfie in WhiteShorts Bot <${{ secrets.EMAIL_FROM }}>
           secure: true
           body: |
             Workflow failed.

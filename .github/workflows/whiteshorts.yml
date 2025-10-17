@@ -7,8 +7,8 @@ on:
     inputs:
       run_training:
         description: "Also (re)train QRF models?"
-        required: true
-        default: "true"
+        required: false
+        default: "false"
         type: choice
         options: ["true", "false"]
       override_date:
@@ -106,9 +106,9 @@ jobs:
 
       # ---------- (OPTIONAL) TRAIN ----------
       - name: Train QRF models (optional)
-     #   if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_training == 'true' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_training == 'true' }}
         run: |
-          python -m white_shorts.cli.train_qrf all --version 0.3.0
+          #python -m white_shorts.cli.train_qrf all --version 0.3.0
 
       # ---------- PREDICT ----------
       - name: Predict from saved slate
@@ -157,7 +157,7 @@ jobs:
       - name: Process Metrics
         run: |
             # Log actuals (yesterday → last slate)
-            python -m white_shorts.cli.log-actuals --date 2025-10-15
+            python -m white_shorts.cli.log_actuals --date 2025-10-15
 
             # Backfill (range)
             #python -m white_shorts.cli.backfill --start 2025-10-04 --end 2025-10-15 --what actuals

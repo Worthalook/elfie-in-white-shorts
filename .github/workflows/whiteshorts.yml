@@ -10,7 +10,7 @@ on:
         required: true
         default: "true"
         type: choice
-        options: ["false", "true"]
+        options: ["true", "false"]
       override_date:
         description: "Slate date (YYYY-MM-DD or DD/MM/YYYY). Leave empty for 'tomorrow' in Australia/Melbourne."
         required: false

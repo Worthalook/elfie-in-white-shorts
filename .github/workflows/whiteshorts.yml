@@ -7,8 +7,8 @@ on:
     inputs:
       run_training:
         description: "Also (re)train QRF models?"
-        required: false
-        default: "false"
+        required: true
+        default: "true"
         type: choice
         options: ["false", "true"]
       override_date:

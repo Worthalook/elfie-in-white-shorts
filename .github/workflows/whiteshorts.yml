@@ -106,7 +106,7 @@ jobs:
 
       # ---------- (OPTIONAL) TRAIN ----------
       - name: Train QRF models (optional)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_training == 'true' }}
+     #   if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_training == 'true' }}
         run: |
           python -m white_shorts.cli.train_qrf all --version 0.3.0
 
@@ -156,11 +156,11 @@ jobs:
 
       - name: Process Metrics
         run: |
-          # Log actuals (yesterday → last slate)
-            #ws log-actuals --date 2025-10-14
+            # Log actuals (yesterday → last slate)
+            python -m white_shorts.cli.log-actuals --date 2025-10-15
 
             # Backfill (range)
-            ws backfill --start 2025-10-04 --end 2025-10-15 --what actuals
+            #python -m white_shorts.cli.backfill --start 2025-10-04 --end 2025-10-15 --what actuals
 
             # Dashboards (regenerate export files used by Streamlit portal)
-            ws dashboards --as-of 2025-10-15
+            pyton -m white_shorts.cli.dashboards --as-of 2025-10-15

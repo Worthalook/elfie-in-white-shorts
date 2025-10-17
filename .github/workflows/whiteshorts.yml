@@ -1,4 +1,4 @@
-name: WS daily pipeline (AEST)
+Iname: WS daily pipeline (AEST)
 
 on:
   push:
@@ -163,4 +163,4 @@ jobs:
             #python -m white_shorts.cli.backfill --start 2025-10-04 --end 2025-10-15 --what actuals
 
             # Dashboards (regenerate export files used by Streamlit portal)
-            pyton -m white_shorts.cli.dashboards --as-of 2025-10-15
+            python -m white_shorts.cli.dashboards --as-of 2025-10-15

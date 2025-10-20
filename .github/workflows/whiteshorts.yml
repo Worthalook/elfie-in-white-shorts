@@ -106,7 +106,7 @@ jobs:
 
       # ---------- (OPTIONAL) TRAIN ----------
       - name: Train QRF models (optional)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_training == 'true' }}
+       # if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_training == 'true' }}
         run: |
           #python -m white_shorts.cli.train_qrf all --version 0.3.0
 

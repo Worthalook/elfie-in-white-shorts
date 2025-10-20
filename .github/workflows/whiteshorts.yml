@@ -10,7 +10,7 @@ on:
         required: false
         default: "false"
         type: choice
-        options: ["false", "true"]
+        options: ["true", "false"]
       override_date:
         description: "Slate date (YYYY-MM-DD or DD/MM/YYYY). Leave empty for 'tomorrow' in Australia/Melbourne."
         required: false
@@ -36,7 +36,7 @@ jobs:
       SPORTS_DATA_BASE: https://api.sportsdata.io
       # API key should be stored in repo/org secrets
       SPORTS_DATA_API_KEY: ${{ secrets.SPORTS_DATA_API_KEY }}
-      INPUT_OVERRIDE_DATE: '2025-Oct-15'
+      #INPUT#_OVERRIDE_DATE: '2025-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,7 +108,7 @@ jobs:
       - name: Train QRF models (optional)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_training == 'true' }}
         run: |
-          python -m white_shorts.cli.train_qrf all --version 0.3.0
+          #python -m white_shorts.cli.train_qrf all --version 0.3.0
 
       # ---------- PREDICT ----------
       - name: Predict from saved slate
@@ -156,11 +156,12 @@ jobs:
 
       - name: Process Metrics
         run: |
-          # Log actuals (yesterday → last slate)
-            #ws log-actuals --date 2025-10-14
+            # Log actuals (yesterday → last slate)
+            python -m white_shorts.cli.log_actuals --date 2025-10-15
 
             # Backfill (range)
-            python -m white_shorts.cli.backfill --start 2025-10-04 --end 2025-10-15 --what actuals
+
+            #python -m white_shorts.cli.backfill --start 2025-10-04 --end 2025-10-15 --what actuals
 
             # Dashboards (regenerate export files used by Streamlit portal)
             python -m white_shorts.cli.dashboards --as-of 2025-10-15

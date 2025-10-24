@@ -138,9 +138,11 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
     games = proj[["date","game_id","team","opponent"]].dropna().drop_duplicates()
     # Create a per-game total by summing team λs
     total_rows = []
+
     for gid, ggrp in games.groupby("game_id"):
         # pick a canonical row (first) for identifiers
         r0 = ggrp.iloc[0]
+        pred_date = r0["date"]
         team_a = str(r0["team"]); team_b = str(r0["opponent"])
         lam_a = forecast_next(ets_models.get(team_a)) if team_a in ets_models else np.nan
         lam_b = forecast_next(ets_models.get(team_b)) if team_b in ets_models else np.nan
@@ -173,7 +175,7 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
             all_preds[c] = pd.NA
 
     os.makedirs(out_dir, exist_ok=True)
-    out_csv = os.path.join(out_dir, f"predictions_{run_id}.csv")
+    out_csv = os.path.join(out_dir, f"predictions_{pred_date}_{run_id}.csv")
     all_preds.to_csv(out_csv, index=False)
 
     append("fact_predictions", all_preds)

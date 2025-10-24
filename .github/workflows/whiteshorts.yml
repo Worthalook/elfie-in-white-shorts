@@ -90,10 +90,11 @@ jobs:
           else:
               slate = (now_au - timedelta(days=1)).date()  # yesterday AU
           yday  = (now_au - timedelta(days=2)).date()      # -2 AU
-          print(f"slate={slate}  yesterday={yday}")
+          
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               fh.write(f"slate={slate}\n")
               fh.write(f"yesterday={yday}\n")
+              fh.write(f"d={d.date()}\n")
           PY
         env:
           INPUT_OVERRIDE_DATE: ${{ github.event.inputs.override_date }}

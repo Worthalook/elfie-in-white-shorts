@@ -7,14 +7,14 @@ on:
     inputs:
       run_training:
         description: "Also (re)train QRF models?"
-        required: false
-        default: "false"
+        required: true
+        default: "true"
         type: choice
         options: ["true", "false"]
       override_date:
         description: "Slate date (YYYY-MM-DD or DD/MM/YYYY). Leave empty for 'tomorrow' in Australia/Melbourne."
-        required: false
-        default: ""
+        required: true
+        default: "2025-10-10"
   #schedule:
     # 09:05 Melbourne time daily ~= 22:05 UTC previous day (adjust as you prefer)
    # - cron: "05 22 * * *"

@@ -14,7 +14,8 @@ on:
       override_date:
         description: "Slate date (YYYY-MM-DD or DD/MM/YYYY). Leave empty for 'tomorrow' in Australia/Melbourne."
         required: true
-        default: "2025-10-10"
+        default: ""
+        value: "2025-10-10"
   #schedule:
     # 09:05 Melbourne time daily ~= 22:05 UTC previous day (adjust as you prefer)
    # - cron: "05 22 * * *"
@@ -80,9 +81,11 @@ jobs:
           now_au = datetime.now(tz).replace(hour=9, minute=0, second=0, microsecond=0)
           if override:
               # accept both YYYY-MM-DD and DD/MM/YYYY
+              fh.write(f"OVERRIDE (RAW)={override}\n")
               import pandas as pd
               d = pd.to_datetime(override, dayfirst=True, errors="coerce")
               if pd.isna(d): raise SystemExit(f"Unparseable override_date: {override}")
+              fh.write(f"OVERRIDE (SLATE)={d.date()}\n")
               slate = d.date()
           else:
               slate = (now_au - timedelta(days=1)).date()  # yesterday AU

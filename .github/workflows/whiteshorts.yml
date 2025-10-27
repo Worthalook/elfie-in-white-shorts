@@ -115,7 +115,7 @@ jobs:
           python -m white_shorts.cli.train_qrf all --version 0.3.0
 
       # ---------- PREDICT ----
-      -----
+      
       - name: Predict from saved slate
         run: |
           SLATE_PATH="data/slates/slate_${{ steps.dates.outputs.slate }}.parquet"

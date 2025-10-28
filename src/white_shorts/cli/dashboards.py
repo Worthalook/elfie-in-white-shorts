@@ -31,15 +31,15 @@ def _eval_frame(con: duckdb.DuckDBPyConnection, days: int) -> pd.DataFrame:
     exists = _ensure_tables(con)
 
     # Base predictions (authoritative for target)
-    con.execute("""
+    con.execute(f"""
         CREATE OR REPLACE TEMP VIEW preds_win AS
         SELECT
             target AS p_target,
             date, game_id, team, opponent, player_id, name,
             lambda_or_mu AS mu, q10, q90, p_ge_k_json
         FROM fact_predictions
-        WHERE date >= (CURRENT_DATE - INTERVAL ? DAY)
-    """, [days])
+        WHERE date >= (CURRENT_DATE - INTERVAL {int(days)} DAY)
+    """)
 
     # Actuals source: prefer fact_actuals; otherwise derive from current_season.parquet
     if exists.get("fact_actuals", False):

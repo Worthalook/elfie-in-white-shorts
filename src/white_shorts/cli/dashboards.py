@@ -43,14 +43,14 @@ def _eval_frame(con: duckdb.DuckDBPyConnection, days: int) -> pd.DataFrame:
 
     # Actuals source: prefer fact_actuals; otherwise derive from current_season.parquet
     if exists.get("fact_actuals", False):
-        con.execute("""
-            CREATE OR REPLACE TEMP VIEW acts_long AS
-            SELECT
-                target, date, game_id, team, opponent, player_id, name,
-                actual
-            FROM fact_actuals
-            WHERE date >= (CURRENT_DATE - INTERVAL ? DAY)
-        """, [days])
+        con.execute(f"""
+    CREATE OR REPLACE TEMP VIEW acts_long AS
+    SELECT
+        target, date, game_id, team, opponent, player_id, name,
+        actual
+    FROM fact_actuals
+    WHERE date >= (CURRENT_DATE - INTERVAL {int(days)} DAY)
+""")
     else:
         # Derive long actuals from the parquet store
         # Adjust path/column names if your store differs.

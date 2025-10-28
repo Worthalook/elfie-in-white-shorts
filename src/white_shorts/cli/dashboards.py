@@ -30,7 +30,6 @@ def build(
 
     con = duckdb.connect(settings.DUCKDB_PATH)
     try:
-        # Keep identifiers and prediction fields; left join to actuals
         q = f"""
         WITH preds AS (
           SELECT *
@@ -59,16 +58,14 @@ def build(
         typer.echo("No data for window. (Check that fact_predictions/fact_actuals are populated.)")
         return
 
-    # Compute metrics by target
     rows = []
     for t, g in df.groupby("target"):
         n_total = len(g)
         n_actual = int(g["actual"].notna().sum())
         if n_actual == 0:
             continue
-        # Fillna only for metric computations; don't mutate original df
-        mu = g["mu"].fillna(0)
-        y  = g["actual"].fillna(0)
+        mu  = g["mu"].fillna(0)
+        y   = g["actual"].fillna(0)
         q10 = g["q10"].fillna(0)
         q90 = g["q90"].fillna(0)
 
@@ -88,8 +85,7 @@ def build(
         typer.echo("No metrics computed (no actuals in the selected window).")
         return
 
-    # Write artifacts
-    date_tag = _now_date_str()
+    date_tag   = _now_date_str()
     metrics_csv = os.path.join(out, f"metrics_{date_tag}_last_{days}d.csv")
     raw_csv     = os.path.join(out, f"eval_raw_{date_tag}_last_{days}d.csv")
 
@@ -108,8 +104,7 @@ def rolling_metrics(
     days: int = typer.Option(14, help="Rolling window (days) to evaluate")
 ) -> None:
     """
-    Backward-compatible thin wrapper:
-    prints the summary table only (does not write artifacts).
+    Backward-compatible: prints the summary table only (no artifacts).
     """
     con = duckdb.connect(settings.DUCKDB_PATH)
     try:

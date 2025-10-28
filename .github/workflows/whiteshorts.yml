@@ -159,6 +159,29 @@ jobs:
             git push origin HEAD:${{ github.ref_name }}
           fi
 
+      - name: Build dashboards (14d)
+        run: |
+         python -m white_shorts.cli.dashboards build --days 14 --out data/dashboards
+
+      - name: Upload dashboards
+        uses: actions/upload-artifact@v4
+        with: 
+          name: dashboards-${{ steps.dates.outputs.slate }}
+          path: data/dashboards/*.csv
+          retention-days: 14
+
+      - name: Commit dashboards to branch
+        run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A data/dashboards/*.csv || true
+            if git diff --cached --quiet; then
+                echo "No dashboard changes to commit."
+            else
+                git commit -m "Dashboards for ${{ steps.dates.outputs.slate }} [skip ci]"
+                git push origin HEAD:${{ github.ref_name }}
+            fi
+
       - name: Process Metrics
         run: |
             # Log actuals (yesterday → last slate)

@@ -6,6 +6,7 @@ from pathlib import Path
 import joblib
 from .trainers import ModelBundle
 import hashlib
+from .io_meta import write_model_meta
 
 # Normalize WS_MODELS_DIR (handles backslashes, trailing slashes, etc.)
 DEFAULT_DIR = Path(os.getenv("WS_MODELS_DIR", "models")).expanduser()
@@ -29,6 +30,19 @@ def save_model(bundle: ModelBundle, name: str | None = None, dir: Path | None = 
         "model_name": bundle.model_name,
         "model_version": bundle.model_version,
     }, path)
+    try:
+        write_model_meta(
+            path,
+            model_name=bundle.model_name,
+            model_version=bundle.model_version,
+            target=bundle.target,
+            features=bundle.features,
+            train_rows_last_season=getattr(bundle, "train_rows_last_season", None),
+            train_rows_current=getattr(bundle, "train_rows_current", None),
+            train_cutoff_max_date=str(getattr(bundle, "train_cutoff_max_date", "")) or None,
+        )
+    except Exception as e:
+        print(f"[warn] failed to write model meta: {e}")
     return str(path)
 
 def load_model(name_or_path: str, dir: Path | None = None) -> dict:

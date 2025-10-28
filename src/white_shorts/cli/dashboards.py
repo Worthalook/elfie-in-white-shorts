@@ -103,6 +103,22 @@ def build(
     con = duckdb.connect(settings.DUCKDB_PATH)
     try:
         df = _eval_frame(con, days)
+        # --- normalize/repair columns so 'target' is guaranteed to exist -----------
+        # lower-case and strip any whitespace from all column names
+        df.columns = [str(c).strip().lower() for c in df.columns]
+
+        # if 'target' still missing, try common alternates then rename -> 'target'
+        if "target" not in df.columns:
+            for alt in ("p_target", "variable", "outcome", "label"):
+                if alt in df.columns:
+                    df = df.rename(columns={alt: "target"})
+                    break
+
+        # if still missing, print what we do have and stop gracefully
+        if "target" not in df.columns:
+          typer.echo(f"Joined frame is missing 'target'. Columns found: {list(df.columns)}")
+          return
+
     finally:
         con.close()
 
@@ -157,6 +173,21 @@ def rolling_metrics(days: int = typer.Option(14, help="Rolling window (days) to 
     con = duckdb.connect(settings.DUCKDB_PATH)
     try:
         df = _eval_frame(con, days)
+         # --- normalize/repair columns so 'target' is guaranteed to exist -----------
+        # lower-case and strip any whitespace from all column names
+        df.columns = [str(c).strip().lower() for c in df.columns]
+
+        # if 'target' still missing, try common alternates then rename -> 'target'
+        if "target" not in df.columns:
+            for alt in ("p_target", "variable", "outcome", "label"):
+                if alt in df.columns:
+                    df = df.rename(columns={alt: "target"})
+                    break
+
+        # if still missing, print what we do have and stop gracefully
+        if "target" not in df.columns:
+          typer.echo(f"Joined frame is missing 'target'. Columns found: {list(df.columns)}")
+          return
     finally:
         con.close()
 

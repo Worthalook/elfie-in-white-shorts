@@ -93,35 +93,20 @@ def _eval_frame(con: duckdb.DuckDBPyConnection, days: int) -> pd.DataFrame:
 
 @app.command()
 def build(
-    days: int = typer.Option(14, help="Rolling window (days) to evaluate"),
+    days: int = typer.Option(14, help="Rolling window (days) to evaluate")),
     out: str = typer.Option("data/dashboards", help="Output directory for artifacts"),
     echo_table: bool = typer.Option(True, help="Print summary table to stdout"),
 ) -> None:
-    """Build rolling metrics, write CSV artifacts, and optionally echo a table."""
     os.makedirs(out, exist_ok=True)
 
     con = duckdb.connect(settings.DUCKDB_PATH)
     try:
         df = _eval_frame(con, days)
-        # --- normalize/repair columns so 'target' is guaranteed to exist -----------
-        # lower-case and strip any whitespace from all column names
-        df.columns = [str(c).strip().lower() for c in df.columns]
-
-        # if 'target' still missing, try common alternates then rename -> 'target'
-        if "target" not in df.columns:
-            for alt in ("p_target", "variable", "outcome", "label"):
-                if alt in df.columns:
-                    df = df.rename(columns={alt: "target"})
-                    break
-
-        # if still missing, print what we do have and stop gracefully
-        if "target" not in df.columns:
-          typer.echo(f"Joined frame is missing 'target'. Columns found: {list(df.columns)}")
-          return
-
     finally:
         con.close()
 
+    # --- normalize/repair so 'target' exists if present
+    df.columns = [str(c).strip().lower() for c in df.columns]
     if df.empty or "target" not in df.columns:
         typer.echo("No data for window (or missing required columns).")
         return
@@ -132,12 +117,10 @@ def build(
         n_actual = int(g["actual"].notna().sum())
         if n_actual == 0:
             continue
-
         y   = g["actual"].fillna(0.0)
         mu  = g["mu"].fillna(0.0)
         q10 = g["q10"].fillna(0.0)
         q90 = g["q90"].fillna(0.0)
-
         rows.append({
             "target": t,
             "n_preds": n_total,
@@ -149,10 +132,20 @@ def build(
             "window_days": days,
         })
 
-    out_df = pd.DataFrame(rows).sort_values(["target"]).reset_index(drop=True)
-    if out_df.empty:
-        typer.echo("No metrics computed (no actuals in the selected window).")
+    # --- handle no-actuals case safely
+    if not rows:
+        # still write the raw join for debugging
+        date_tag = _now_date_str()
+        raw_csv = os.path.join(out, f"eval_raw_{date_tag}_last_{days}d.csv")
+        df.to_csv(raw_csv, index=False)
+        typer.echo("No metrics computed (no rows with actuals in the selected window).")
+        typer.echo(f"Wrote raw join  → {raw_csv}")
         return
+
+    out_df = pd.DataFrame(rows)
+    # sort only if the column exists (it does, but keep it defensive)
+    if "target" in out_df.columns and not out_df.empty:
+        out_df = out_df.sort_values(["target"]).reset_index(drop=True)
 
     date_tag = _now_date_str()
     metrics_csv = os.path.join(out, f"metrics_{date_tag}_last_{days}d.csv")
@@ -167,30 +160,16 @@ def build(
     typer.echo(f"\nWrote metrics → {metrics_csv}")
     typer.echo(f"Wrote raw join  → {raw_csv}")
 
+
 @app.command()
 def rolling_metrics(days: int = typer.Option(14, help="Rolling window (days) to evaluate")) -> None:
-    """Back-compat console-only view."""
     con = duckdb.connect(settings.DUCKDB_PATH)
     try:
         df = _eval_frame(con, days)
-         # --- normalize/repair columns so 'target' is guaranteed to exist -----------
-        # lower-case and strip any whitespace from all column names
-        df.columns = [str(c).strip().lower() for c in df.columns]
-
-        # if 'target' still missing, try common alternates then rename -> 'target'
-        if "target" not in df.columns:
-            for alt in ("p_target", "variable", "outcome", "label"):
-                if alt in df.columns:
-                    df = df.rename(columns={alt: "target"})
-                    break
-
-        # if still missing, print what we do have and stop gracefully
-        if "target" not in df.columns:
-          typer.echo(f"Joined frame is missing 'target'. Columns found: {list(df.columns)}")
-          return
     finally:
         con.close()
 
+    df.columns = [str(c).strip().lower() for c in df.columns]
     if df.empty or "target" not in df.columns:
         typer.echo("No data for window.")
         return
@@ -198,6 +177,29 @@ def rolling_metrics(days: int = typer.Option(14, help="Rolling window (days) to 
     results = []
     for t, g in df.groupby("target"):
         if g["actual"].notna().sum() == 0:
+            continue
+        results.append({
+            "target": t,
+            "metric": "rmse",
+            "value": rmse(g["actual"].fillna(0), g["mu"].fillna(0))
+        })
+        results.append({
+            "target": t,
+            "metric": "coverage_10_90",
+            "value": coverage(g["actual"].fillna(0), g["q10"].fillna(0), g["q90"].fillna(0))
+        })
+
+    if not results:
+        typer.echo("No metrics computed (no rows with actuals in the selected window).")
+        return
+
+    out = pd.DataFrame(results)
+    # Only sort if 'target' is present and frame not empty
+    if "target" in out.columns and not out.empty:
+        out = out.sort_values(["target"]).reset_index(drop=True)
+
+    typer.echo(out.to_string(index=False))
+
 
 if __name__ == "__main__":
     app()

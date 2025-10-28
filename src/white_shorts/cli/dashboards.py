@@ -198,20 +198,6 @@ def rolling_metrics(days: int = typer.Option(14, help="Rolling window (days) to 
     results = []
     for t, g in df.groupby("target"):
         if g["actual"].notna().sum() == 0:
-            continue
-        results.append({
-            "target": t,
-            "metric": "rmse",
-            "value": rmse(g["actual"].fillna(0), g["mu"].fillna(0))
-        })
-        results.append({
-            "target": t,
-            "metric": "coverage_10_90",
-            "value": coverage(g["actual"].fillna(0), g["q10"].fillna(0), g["q90"].fillna(0))
-        })
-
-    out = pd.DataFrame(results)
-    typer.echo(out.to_string(index=False) if not out.empty else "No metrics computed.")
 
 if __name__ == "__main__":
     app()

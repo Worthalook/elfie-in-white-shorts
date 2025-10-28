@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 import os, hashlib, joblib
 from .io_meta import write_model_meta
+from ..modeling.metadata import infer_train_meta, write_meta
 
 DEFAULT_DIR = Path(os.getenv("WS_MODELS_DIR", "models")).expanduser()
 
@@ -21,6 +22,15 @@ def save_qrf(bundle) -> str:
         "model_version": bundle.model_version,
     }, path)
     try:
+        #-----------------------------------------------------------------
+        meta = infer_train_meta(
+        bundle=bundle,
+        train_df=train_df,  # the frame you trained on (or a representative sample)
+        extras={"rows_last_season": int(n_last), "rows_current": int(n_cur)},
+    )
+    
+        write_meta(fname.replace(".joblib", ".meta.json"), meta)
+        #-----------------------------------------------------------------
         write_model_meta(
             path,
             model_name=bundle.model_name,

@@ -93,10 +93,11 @@ def _eval_frame(con: duckdb.DuckDBPyConnection, days: int) -> pd.DataFrame:
 
 @app.command()
 def build(
-    days: int = typer.Option(14, help="Rolling window (days) to evaluate")),
+    days: int = typer.Option(14, help="Rolling window (days) to evaluate"),
     out: str = typer.Option("data/dashboards", help="Output directory for artifacts"),
     echo_table: bool = typer.Option(True, help="Print summary table to stdout"),
 ) -> None:
+
     os.makedirs(out, exist_ok=True)
 
     con = duckdb.connect(settings.DUCKDB_PATH)
@@ -199,6 +200,7 @@ def rolling_metrics(days: int = typer.Option(14, help="Rolling window (days) to 
         out = out.sort_values(["target"]).reset_index(drop=True)
 
     typer.echo(out.to_string(index=False))
+
 
 
 if __name__ == "__main__":

@@ -169,4 +169,5 @@ jobs:
             #python -m white_shorts.cli.backfill --start 2025-10-04 --end 2025-10-15 --what actuals
 
             # Dashboards (regenerate export files used by Streamlit portal)
-            python -m white_shorts.cli.dashboards --as-of 2025-10-15
+            python -m white_shorts.cli.dashboards build --days 14 --out data/dashboards
+

@@ -201,9 +201,9 @@ def build(
         f.write("<html><head><meta charset='utf-8'><title>WhiteShorts Dash</title></head><body>")
         f.write(f"<h2>WhiteShorts metrics — last {days} days (UTC as of {date_tag})</h2>")
         f.write("<h3>Per-target summary</h3>")
-        f.write(metrics_df.to_html(index=False, float_format=lambda x: f\"{x:.4f}\" if isinstance(x, float) else x))
+        f.write(metrics_df.to_html(index=False, float_format=lambda x: "{x:.4f}" if isinstance(x, float) else x))
         f.write("<h3>Consistency (headline KPI)</h3>")
-        f.write(kpi_df.to_html(index=False, float_format=lambda x: f\"{x:.4f}\" if isinstance(x, float) else x))
+        f.write(kpi_df.to_html(index=False, float_format=lambda x: "{x:.4f}" if isinstance(x, float) else x))
         f.write(f"<p><em>Raw join: {os.path.basename(raw_csv)}</em></p>")
         f.write("</body></html>")
 

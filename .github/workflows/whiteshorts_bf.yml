@@ -93,7 +93,7 @@ jobs:
 
       - name: Backfill actuals into DuckDB (day-by-day)
         env:
-        DAYS: ${{ steps.dates.outputs.days }}
+            DAYS: ${{ steps.dates.outputs.days }}
         run: |
             IFS=',' read -ra LIST <<< "$DAYS"
             echo "Backfilling ${#LIST[@]} day(s): ${DAYS}"

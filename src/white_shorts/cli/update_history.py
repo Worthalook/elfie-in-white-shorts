@@ -1,17 +1,11 @@
-# src/white_shorts/cli/update_history.py
 from __future__ import annotations
-import os
-import json
-import requests
-import pandas as pd
-import duckdb
-import typer
+import os, requests, pandas as pd, duckdb, typer, json
 from ..config import settings
 
 app = typer.Typer(help="Update current-season history (actuals) into DuckDB")
 
-# --- Adjust these if your API fields differ ---
-_FIELD_MAP = {
+# SportsData.IO → canonical
+FIELD_MAP = {
     "Date": "date",
     "GameID": "game_id",
     "Team": "team",
@@ -24,80 +18,96 @@ _FIELD_MAP = {
     "ShotsOnGoal": "shots_on_goal",
 }
 
-_REQUIRED = ["date", "game_id", "team", "opponent", "player_id", "name",
-             "points", "goals", "assists", "shots_on_goal"]
+REQUIRED = ["date","game_id","team","opponent","player_id","name","points","goals","assists","shots_on_goal"]
 
-def _fetch_actuals_json(date_str: str) -> list[dict]:
+def _fetch_actuals(date_str_iso: str) -> list[dict]:
+    """Fetch ACTUALS for a date; try 'YYYY-Mon-DD' then 'YYYY-MM-DD'."""
     base = os.getenv("SPORTS_DATA_BASE", "https://api.sportsdata.io")
-    key = os.getenv("SPORTS_DATA_API_KEY", "")
-    # Use your actual stats endpoint (not projections)
-    url = f"{base}/api/nhl/fantasy/json/PlayerGameStatsByDate/{date_str}?key={key}"
-    r = requests.get(url, timeout=30)
-    r.raise_for_status()
-    data = r.json()
-    if isinstance(data, dict):
-        # API sometimes wraps results; make it list-like
-        data = data.get("results") or data.get("data") or []
-    return data or []
+    key  = os.getenv("SPORTS_DATA_API_KEY", "")
+    if not key:
+        raise RuntimeError("SPORTS_DATA_API_KEY missing!")
 
-def _normalize_frame(raw: list[dict]) -> pd.DataFrame:
+    d = pd.to_datetime(date_str_iso, dayfirst=True, errors="coerce")
+    if pd.isna(d):
+        raise typer.BadParameter(f"Unparseable date: {date_str_iso}")
+
+    # SportsData NHL often expects 'YYYY-Mon-DD' (e.g., 2025-Oct-07)
+    candidates = [d.strftime("%Y-%b-%d"), d.strftime("%Y-%m-%d")]
+    for ds in candidates:
+        url = f"{base}/api/nhl/fantasy/json/PlayerGameStatsByDate/{ds}?key={key}"
+        r = requests.get(url, timeout=30)
+        if r.status_code == 200:
+            try:
+                data = r.json()
+                if isinstance(data, dict):
+                    data = data.get("results") or data.get("data") or []
+                return data or []
+            except Exception:
+                pass
+    return []
+
+def _normalize(raw: list[dict]) -> pd.DataFrame:
     if not raw:
-        return pd.DataFrame(columns=_REQUIRED)
+        return pd.DataFrame(columns=REQUIRED)
     df = pd.DataFrame(raw)
 
-    # Rename known fields
-    for src, dst in _FIELD_MAP.items():
+    # rename
+    for src, dst in FIELD_MAP.items():
         if src in df.columns and dst not in df.columns:
             df = df.rename(columns={src: dst})
 
-    # Ensure required columns exist
-    for col in _REQUIRED:
-        if col not in df.columns:
-            df[col] = None
+    # ensure required cols exist
+    for c in REQUIRED:
+        if c not in df.columns:
+            df[c] = None
 
-    # Type coercions
+    # types
     df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.date
-    for c in ("game_id", "player_id"):
+    for c in ("game_id","player_id"):
         df[c] = pd.to_numeric(df[c], errors="coerce").astype("Int64")
-    for c in ("team", "opponent", "name"):
-        df[c] = df[c].astype(str).fillna("").str.strip()
-
-    # Targets as numeric
-    for c in ("points", "goals", "assists", "shots_on_goal"):
+    for c in ("team","opponent","name"):
+        df[c] = df[c].astype(str).str.strip()
+    for c in ("points","goals","assists","shots_on_goal"):
         df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0).astype(float)
 
-    # Keep only required
-    df = df[_REQUIRED].dropna(subset=["date", "game_id", "team", "opponent", "player_id"])
+    # drop rows missing identifiers
+    df = df[REQUIRED].dropna(subset=["date","game_id","team","opponent","player_id"])
     return df
 
 def _to_long(df: pd.DataFrame) -> pd.DataFrame:
-    # Convert wide → long with canonical 'target' + 'actual'
+    if df.empty:
+        return pd.DataFrame(columns=["date","game_id","team","opponent","player_id","name","target","actual"])
     long = df.melt(
         id_vars=["date","game_id","team","opponent","player_id","name"],
         value_vars=["points","goals","assists","shots_on_goal"],
         var_name="target",
         value_name="actual",
     )
-    # Basic sanity
-    long = long.dropna(subset=["date","game_id","team","opponent","player_id","target"])
+    # normalize team/opponent for stable joins (upper/trim)
+    long["team"] = long["team"].str.upper().str.strip()
+    long["opponent"] = long["opponent"].str.upper().str.strip()
     return long
 
 @app.command()
 def main(date: str):
-    """Upsert actuals for a single YYYY-MM-DD date into DuckDB.fact_actuals."""
-    # Accept both Y-m-d and d/m/Y
+    """Upsert actuals for a single date (accepts YYYY-MM-DD or DD/MM/YYYY)."""
     d = pd.to_datetime(date, dayfirst=True, errors="coerce")
     if pd.isna(d):
         raise typer.BadParameter(f"Unparseable date: {date}")
-    date_str = d.strftime("%Y-%m-%d")
+    iso = d.strftime("%Y-%m-%d")
 
-    raw = _fetch_actuals_json(date_str)
-    df = _normalize_frame(raw)
+    raw = _fetch_actuals(iso)
+    print(f"Fetched {len(raw)} rows from API for {iso}")
+    df = _normalize(raw)
+    print(f"Normalized rows: {len(df)}")
+    if not df.empty:
+        print("Sample:", df.head(3).to_dict(orient="records"))
+
     long = _to_long(df)
+    print(f"Long rows (targets expanded): {len(long)}")
 
     con = duckdb.connect(settings.DUCKDB_PATH)
     try:
-        # Create table if not exists
         con.execute("""
             CREATE TABLE IF NOT EXISTS fact_actuals (
               date DATE,
@@ -110,19 +120,17 @@ def main(date: str):
               actual DOUBLE
             )
         """)
-
-        # Upsert semantics: delete duplicates for (date,game_id,team,opponent,player_id,target) then insert
+        # Upsert by replacing existing rows for the (date, keys, target)
         con.execute("""
-            DELETE FROM fact_actuals USING long
-            WHERE fact_actuals.date = long.date
-              AND fact_actuals.game_id = long.game_id
-              AND fact_actuals.team = long.team
-              AND fact_actuals.opponent = long.opponent
-              AND fact_actuals.player_id = long.player_id
-              AND fact_actuals.target = long.target
-        """)  # 'long' is auto-registered when we pass pandas df in the next line
-        con.execute("INSERT INTO fact_actuals SELECT * FROM long", {"long": long})
+            DELETE FROM fact_actuals
+            WHERE date = ?
+        """, [pd.Timestamp(iso).date()])
+
+        if not long.empty:
+            con.execute("INSERT INTO fact_actuals SELECT * FROM long", {"long": long})
+            # ensure physical write
+            con.execute("CHECKPOINT")
     finally:
         con.close()
 
-    typer.echo(f"Upserted actuals for {date_str}: {len(long)} rows")
+    print(f"Upserted actuals for {iso}: {len(long)} rows")

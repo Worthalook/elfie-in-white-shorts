@@ -93,7 +93,7 @@ jobs:
 
       - name: Backfill actuals into DuckDB (day-by-day)
         env:
-            DAYS: ${{ steps.dates.outputs.days }}
+        DAYS: ${{ steps.dates.outputs.days }}
         run: |
             IFS=',' read -ra LIST <<< "$DAYS"
             echo "Backfilling ${#LIST[@]} day(s): ${DAYS}"
@@ -104,10 +104,48 @@ jobs:
                 echo "::warning title=update_history failed::Date ${D} failed, continuing"
                 FAIL=$((FAIL+1))
                 fi
-                # brief pause helps avoid rate limits
-                sleep 0.4
+                sleep 0.3
             done
-            echo "Backfill complete with ${FAIL} error day(s)."
+            echo "Backfill done, failed days: ${FAIL}"
+
+      - name: Build dashboards (60d)
+        run: |
+            python -m white_shorts.cli.dashboards build --days 60 --out data/dashboards
+
+
+      - name: Verify actuals written & overlap with preds
+        run: |
+            python - << 'PY'
+            import os, duckdb, pandas as pd
+            db = os.getenv("DUCKDB_PATH","data/white_shorts.duckdb")
+            con = duckdb.connect(db)
+            def cnt(tbl):
+              try: return con.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
+              except: return "missing"
+            print("counts:", {"fact_predictions": cnt("fact_predictions"), "fact_actuals": cnt("fact_actuals")})
+            print("recent actual dates:", con.execute("SELECT DISTINCT date FROM fact_actuals ORDER BY date DESC LIMIT 5").fetchdf().to_string(index=False))
+            print("recent pred dates  :", con.execute("SELECT DISTINCT date FROM fact_predictions ORDER BY date DESC LIMIT 5").fetchdf().to_string(index=False))
+            print("join sample:")
+            print(con.execute("""
+              WITH p AS (
+                SELECT CAST(date AS DATE) d, CAST(game_id AS BIGINT) gid, UPPER(TRIM(team)) t, UPPER(TRIM(opponent)) o,
+                       CAST(player_id AS BIGINT) pid, target
+                FROM fact_predictions
+                WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
+              ),
+              a AS (
+                SELECT CAST(date AS DATE) d, CAST(game_id AS BIGINT) gid, UPPER(TRIM(team)) t, UPPER(TRIM(opponent)) o,
+                       CAST(player_id AS BIGINT) pid, target, actual
+                FROM fact_actuals
+                WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
+              )
+              SELECT p.d, COUNT(*) preds, SUM(CASE WHEN a.actual IS NOT NULL THEN 1 ELSE 0 END) matched
+              FROM p LEFT JOIN a USING(d,gid,t,o,pid,target)
+              GROUP BY 1 ORDER BY 1 DESC LIMIT 10
+            """).fetchdf().to_string(index=False))
+            con.close()
+            PY
+
 
       - name: Diagnose DuckDB path and row counts
         run: |

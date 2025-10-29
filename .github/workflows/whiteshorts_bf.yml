@@ -108,53 +108,76 @@ jobs:
                 sleep 0.4
             done
             echo "Backfill complete with ${FAIL} error day(s)."
+
       - name: Diagnose DuckDB path and row counts
         run: |
-          echo "DuckDB path (env): $DUCKDB_PATH"
-          if [ ! -f "$DUCKDB_PATH" ]; then
-            echo "::error file=$DUCKDB_PATH::DuckDB file not found at that path."; exit 1
-          fi
-          ls -lh "$DUCKDB_PATH" || true
-          # Show important settings from your package (ensures code is using same path)
-          python - << 'PY'
-          import os
-          from white_shorts.config import settings
-          print("settings.DUCKDB_PATH =", settings.DUCKDB_PATH)
-          print("env DUCKDB_PATH      =", os.getenv("DUCKDB_PATH"))
-          PY
-          # Print current counts (helps confirm whether data moved)
-          duckdb -c "ATTACH '$DUCKDB_PATH' AS ws (TYPE DUCKDB); \
-                     USE ws; \
-                     PRAGMA database_list; \
-                     SELECT 'fact_actuals' AS table, COUNT(*) AS n FROM fact_actuals UNION ALL \
-                     SELECT 'fact_predictions', COUNT(*) FROM fact_predictions;"
+            echo "DuckDB path (env): $DUCKDB_PATH"
+            if [ ! -f "$DUCKDB_PATH" ]; then
+              echo "::error file=$DUCKDB_PATH::DuckDB file not found at that path."; exit 1
+            fi
+            ls -lh "$DUCKDB_PATH" || true
+
+            python - << 'PY'
+            import os, sys, pandas as pd, duckdb
+            from white_shorts.config import settings
+            db_env = os.getenv("DUCKDB_PATH")
+            print("settings.DUCKDB_PATH =", settings.DUCKDB_PATH)
+            print("env DUCKDB_PATH      =", db_env)
+
+            con = duckdb.connect(db_env or settings.DUCKDB_PATH)
+            try:
+                # Show attached DBs
+                print(con.execute("PRAGMA database_list").fetchdf().to_string(index=False))
+
+                # Table counts (handle missing tables gracefully)
+                def count_safe(tbl):
+                    try:
+                        return con.execute(f"SELECT COUNT(*) AS n FROM {tbl}").fetchone()[0]
+                    except Exception as e:
+                        return f"missing ({e.__class__.__name__})"
+
+                fa = count_safe("fact_actuals")
+                fp = count_safe("fact_predictions")
+                print("fact_actuals rows: ", fa)
+                print("fact_predictions rows:", fp)
+            finally:
+                con.close()
+            PY
+
 
       - name: Ensure .gitignore allows DuckDB and data (but still ignore models/)
         run: |
-          # Keep models ignored
-          grep -q '^models/$' .gitignore || echo 'models/' >> .gitignore
-          # Make sure 'data/' is not ignored globally
-          if grep -qE '^(data/|/data/)$' .gitignore; then
-            echo "Removing 'data/' from .gitignore so DuckDB can be tracked."
-            sed -i.bak '/^data\/$/d' .gitignore || true
-            sed -i.bak '/^\/data\/$/d' .gitignore || true
-            rm -f .gitignore.bak
-          fi
-          git status --porcelain
+            grep -q '^models/$' .gitignore || echo 'models/' >> .gitignore
+            if grep -qE '^(data/|/data/)$' .gitignore; then
+              echo "Removing 'data/' from .gitignore so DuckDB can be tracked."
+              sed -i.bak '/^data\/$/d' .gitignore || true
+              sed -i.bak '/^\/data\/$/d' .gitignore || true
+              rm -f .gitignore.bak
+            fi
+            git status --porcelain
+
 
       # If the DB didn't change (idempotent backfill), ensure a tiny update so the file hashes differ
       - name: Bump repo_state in DuckDB to ensure commit (backfill only)
         run: |
-          duckdb -c "ATTACH '$DUCKDB_PATH' AS ws (TYPE DUCKDB); \
-                     USE ws; \
-                     CREATE TABLE IF NOT EXISTS repo_state (ts TIMESTAMP, note VARCHAR); \
-                     INSERT INTO repo_state VALUES (now(), 'backfill run on ${{ github.run_id }}'); \
-                     CHECKPOINT; \
-                     SELECT COUNT(*) AS repo_state_rows FROM repo_state;"
+            python - << 'PY'
+            import os, duckdb, pandas as pd
+            db = os.getenv("DUCKDB_PATH", "data/white_shorts.duckdb")
+            con = duckdb.connect(db)
+            try:
+                con.execute("CREATE TABLE IF NOT EXISTS repo_state (ts TIMESTAMP, note VARCHAR)")
+                con.execute("INSERT INTO repo_state VALUES (now(), ?)", [f"backfill run on {os.getenv('GITHUB_RUN_ID','local')}"])
+                # Force a checkpoint to flush WAL (ensures file bytes change)
+                con.execute("CHECKPOINT")
+                n = con.execute("SELECT COUNT(*) FROM repo_state").fetchone()[0]
+                print("repo_state rows:", n)
+            finally:
+                con.close()
+            PY
 
       - name: Show DuckDB size after bump
         run: |
-          ls -lh "$DUCKDB_PATH" || true
+         ls -lh "$DUCKDB_PATH" || true
 
       - name: Build dashboards (optional)
         if: ${{ github.event.inputs.build_dashboards == 'true' }}
@@ -191,18 +214,19 @@ jobs:
 
       - name: Commit DuckDB state
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [ -f "${{ env.DUCKDB_PATH }}" ]; then
-            git add -f "${{ env.DUCKDB_PATH }}"
-            git status --porcelain "${{ env.DUCKDB_PATH }}"
-            if git diff --cached --quiet -- "${{ env.DUCKDB_PATH }}"; then
-              echo "No DuckDB changes to commit."
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            if [ -f "${{ env.DUCKDB_PATH }}" ]; then
+              git add -f "${{ env.DUCKDB_PATH }}"
+              git status --porcelain "${{ env.DUCKDB_PATH }}"
+              if git diff --cached --quiet -- "${{ env.DUCKDB_PATH }}"; then
+                echo "No DuckDB changes to commit."
+              else
+                git commit -m "Backfill: update DuckDB state [${{ steps.dates.outputs.start_norm }}→${{ steps.dates.outputs.end_norm }}] [skip ci]"
+                git push origin HEAD:${{ github.ref_name }}
+              fi
             else
-              git commit -m "Backfill: update DuckDB state [${{ steps.dates.outputs.start_norm }}→${{ steps.dates.outputs.end_norm }}] [skip ci]"
-              git push origin HEAD:${{ github.ref_name }}
+              echo "DuckDB not found at ${{ env.DUCKDB_PATH }}; skipping commit."
             fi
-          else
-            echo "DuckDB not found at ${{ env.DUCKDB_PATH }}; skipping commit."
-          fi
+
 

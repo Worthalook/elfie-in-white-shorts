@@ -1,8 +1,7 @@
 name: WS once-off backfill
 
 on:
-  push:
-    branches: [ "initial-testing" ]
+  
   workflow_dispatch:
     inputs:
       start:

@@ -7,11 +7,11 @@ on:
       start:
         description: "Backfill start date (YYYY-MM-DD or DD/MM/YYYY)"
         required: true
-        default: "2025-10-01"
+        default: "2025-01-10"
       end:
         description: "Backfill end date (YYYY-MM-DD or DD/MM/YYYY)"
         required: true
-        default: "2025-10-30"
+        default: "2025-30-10"
       build_dashboards:
         description: "Build dashboards after backfill?"
         required: true

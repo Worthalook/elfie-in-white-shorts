@@ -89,7 +89,7 @@ jobs:
               fh.write(f"start_norm={rng.min().date()}\n")
               fh.write(f"end_norm={rng.max().date()}\n")
               fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n")                                                          
-          PY
+      PY
 
             - name: Upload API probe artifacts
               uses: actions/upload-artifact@v4
@@ -181,7 +181,7 @@ jobs:
                 print("Join diagnostic failed:", e)
 
             con.close()
-            PY
+      PY
 
 
 
@@ -219,7 +219,7 @@ jobs:
                 print("fact_predictions rows:", fp)
             finally:
                 con.close()
-            PY
+      PY
 
 
       - name: Ensure .gitignore allows DuckDB and data (but still ignore models/)
@@ -250,7 +250,7 @@ jobs:
                 print("repo_state rows:", n)
             finally:
                 con.close()
-            PY
+      PY
 
       - name: Show DuckDB size after bump
         run: |

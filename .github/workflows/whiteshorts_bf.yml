@@ -91,45 +91,6 @@ jobs:
               fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n")
           PY
 
-      - name: Probe actuals API (last 7 days) and log results
-        env:
-            SPORTS_DATA_BASE: ${{ env.SPORTS_DATA_BASE }}
-            SPORTS_DATA_API_KEY: ${{ secrets.SPORTS_DATA_API_KEY }}
-        run: |
-            python - <<'PY'
-            import os, json, requests
-            from datetime import date, timedelta
-            base = os.getenv("SPORTS_DATA_BASE","https://api.sportsdata.io")
-            key  = os.getenv("SPORTS_DATA_API_KEY","")
-            if not key:
-                raise SystemExit("SPORTS_DATA_API_KEY is missing")
-            today = date.today()
-            days = [today - timedelta(days=i) for i in range(1,8)]
-            os.makedirs("data/debug", exist_ok=True)
-            for d in days:
-                for fmt in ("%Y-%b-%d","%Y-%m-%d"):
-                    ds = d.strftime(fmt)
-                    url = f"{base}/api/nhl/fantasy/json/PlayerGameStatsByDate/{ds}?key={key}"
-                    r = requests.get(url, timeout=25)
-                    size = len(r.content or b"")
-                    print(f"[{d}] GET {url} -> {r.status_code}, len={size}")
-                    if r.status_code != 200:
-                        with open(f"data/debug/actuals_{d}_{fmt}_status{r.status_code}.txt","wb") as f:
-                            f.write(r.content or b"")
-                        continue
-                    try:
-                        data = r.json()
-                    except Exception:
-                        data = None
-                    n = len(data) if isinstance(data,list) else (len(data or {}) )
-                    print(f"   parsed items: {n}")
-                    # Save only if non-empty
-                    if n:
-                        with open(f"data/debug/actuals_{d}_{fmt}.json","w",encoding="utf-8") as f:
-                            json.dump(data, f)
-            PY
-
-
             - name: Upload API probe artifacts
               uses: actions/upload-artifact@v4
               with:

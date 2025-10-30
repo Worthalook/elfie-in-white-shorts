@@ -89,36 +89,36 @@ jobs:
               fh.write(f"start_norm={rng.min().date()}\n")
               fh.write(f"end_norm={rng.max().date()}\n")
               fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n")                                                          
-      PY
+          PY
 
-            - name: Upload API probe artifacts
-              uses: actions/upload-artifact@v4
-              with:
-                name: api-probe-actuals
-                path: data/debug/*.*
-                retention-days: 7
+      - name: Upload API probe artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-probe-actuals
+        path: data/debug/*.*
+        retention-days: 7
 
-            - name: Backfill actuals into DuckDB (day-by-day)
-              env:
-                DAYS: ${{ steps.dates.outputs.days }}  # produced by your earlier "Normalize input dates" step
-              run: |
-                IFS=',' read -ra LIST <<< "$DAYS"
-                echo "Backfilling ${#LIST[@]} day(s): ${DAYS}"
-                FAIL=0
-                for D in "${LIST[@]}"; do
-                  echo "==> Logging actuals for ${D}"
-                  # skip if it's today (actuals incomplete)
-                  if [ "$(date -u -d "$D" +%F)" = "$(date -u +%F)" ]; then
-                    echo "   skipping today (${D}); actuals not finalized yet."
-                    continue
-                  fi
-                  if ! python -m white_shorts.cli.update_history "${D}"; then
-                    echo "::warning title=update_history failed::Date ${D} failed, continuing"
-                    FAIL=$((FAIL+1))
-                  fi
-                  sleep 0.3
-                done
-                echo "Backfill done, failed days: ${FAIL}"
+    - name: Backfill actuals into DuckDB (day-by-day)
+        env:
+        DAYS: ${{ steps.dates.outputs.days }}  # produced by your earlier "Normalize input dates" step
+        run: |
+        IFS=',' read -ra LIST <<< "$DAYS"
+        echo "Backfilling ${#LIST[@]} day(s): ${DAYS}"
+        FAIL=0
+        for D in "${LIST[@]}"; do
+            echo "==> Logging actuals for ${D}"
+            # skip if it's today (actuals incomplete)
+            if [ "$(date -u -d "$D" +%F)" = "$(date -u +%F)" ]; then
+            echo "   skipping today (${D}); actuals not finalized yet."
+            continue
+            fi
+            if ! python -m white_shorts.cli.update_history "${D}"; then
+            echo "::warning title=update_history failed::Date ${D} failed, continuing"
+            FAIL=$((FAIL+1))
+            fi
+            sleep 0.3
+        done
+        echo "Backfill done, failed days: ${FAIL}"
 
 
       - name: Build dashboards (60d)

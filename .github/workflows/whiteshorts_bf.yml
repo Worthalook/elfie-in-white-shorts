@@ -75,7 +75,7 @@ jobs:
           INPUT_START: ${{ github.event.inputs.start }}
           INPUT_END: ${{ github.event.inputs.end }}
         run: |
-          python - << 'PY'
+          python - <<'PY'
           import os, sys
           import pandas as pd
           s_raw = (os.getenv("INPUT_START") or "").strip()
@@ -88,7 +88,7 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               fh.write(f"start_norm={rng.min().date()}\n")
               fh.write(f"end_norm={rng.max().date()}\n")
-              fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n")
+              fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n"                                                          
           PY
 
             - name: Upload API probe artifacts
@@ -194,7 +194,7 @@ jobs:
             fi
             ls -lh "$DUCKDB_PATH" || true
 
-            python - << 'PY'
+            python - <<'PY'
             import os, sys, pandas as pd, duckdb
             from white_shorts.config import settings
             db_env = os.getenv("DUCKDB_PATH")
@@ -237,7 +237,7 @@ jobs:
       # If the DB didn't change (idempotent backfill), ensure a tiny update so the file hashes differ
       - name: Bump repo_state in DuckDB to ensure commit (backfill only)
         run: |
-            python - << 'PY'
+            python - <<'PY'
             import os, duckdb, pandas as pd
             db = os.getenv("DUCKDB_PATH", "data/white_shorts.duckdb")
             con = duckdb.connect(db)

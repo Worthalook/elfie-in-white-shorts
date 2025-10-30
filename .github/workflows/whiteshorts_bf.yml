@@ -119,32 +119,107 @@ jobs:
             import os, duckdb, pandas as pd
             db = os.getenv("DUCKDB_PATH","data/white_shorts.duckdb")
             con = duckdb.connect(db)
+
             def cnt(tbl):
               try: return con.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
               except: return "missing"
+
             print("counts:", {"fact_predictions": cnt("fact_predictions"), "fact_actuals": cnt("fact_actuals")})
-            print("recent actual dates:", con.execute("SELECT DISTINCT date FROM fact_actuals ORDER BY date DESC LIMIT 5").fetchdf().to_string(index=False))
-            print("recent pred dates  :", con.execute("SELECT DISTINCT date FROM fact_predictions ORDER BY date DESC LIMIT 5").fetchdf().to_string(index=False))
-            print("join sample:")
-            print(con.execute("""
+
+            print("recent actual dates:")
+            try:
+                print(con.execute("SELECT DISTINCT date FROM fact_actuals ORDER BY date DESC LIMIT 10").fetchdf().to_string(index=False))
+            except Exception as e:
+                print("fact_actuals missing:", e)
+
+            print("recent pred dates:")
+            try:
+                print(con.execute("SELECT DISTINCT date FROM fact_predictions ORDER BY date DESC LIMIT 10").fetchdf().to_string(index=False))
+            except Exception as e:
+                print("fact_predictions missing:", e)
+
+            # Normalized join (use AS for aliases)
+            q = """
               WITH p AS (
-                SELECT CAST(date AS DATE) d, CAST(game_id AS BIGINT) gid, UPPER(TRIM(team)) t, UPPER(TRIM(opponent)) o,
-                       CAST(player_id AS BIGINT) pid, target
+                SELECT CAST(date AS DATE) AS d,
+                       CAST(game_id AS BIGINT) AS gid,
+                       UPPER(TRIM(team)) AS t,
+                       UPPER(TRIM(opponent)) AS o,
+                       CAST(player_id AS BIGINT) AS pid,
+                       target
                 FROM fact_predictions
                 WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
               ),
               a AS (
-                SELECT CAST(date AS DATE) d, CAST(game_id AS BIGINT) gid, UPPER(TRIM(team)) t, UPPER(TRIM(opponent)) o,
-                       CAST(player_id AS BIGINT) pid, target, actual
+                SELECT CAST(date AS DATE) AS d,
+                       CAST(game_id AS BIGINT) AS gid,
+                       UPPER(TRIM(team)) AS t,
+                       UPPER(TRIM(opponent)) AS o,
+                       CAST(player_id AS BIGINT) AS pid,
+                       target,
+                       actual
                 FROM fact_actuals
                 WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
               )
-              SELECT p.d, COUNT(*) preds, SUM(CASE WHEN a.actual IS NOT NULL THEN 1 ELSE 0 END) matched
-              FROM p LEFT JOIN a USING(d,gid,t,o,pid,target)
-              GROUP BY 1 ORDER BY 1 DESC LIMIT 10
-            """).fetchdf().to_string(index=False))
+              SELECT p.d,
+                     COUNT(*) AS preds,
+                     SUM(CASE WHEN a.actual IS NOT NULL THEN 1 ELSE 0 END) AS matched
+              FROM p
+              LEFT JOIN a
+                ON a.d = p.d AND a.gid = p.gid AND a.t = p.t
+               AND a.o = p.o AND a.pid = p.pid AND a.target = p.target
+              GROUP BY 1
+              ORDER BY 1 DESC
+              LIMIT 10
+            """
+            try:
+                print("join sample (last 10 days):")
+                print(con.execute(q).fetchdf().to_string(index=False))
+            except Exception as e:
+                print("Join diagnostic failed:", e)
+
+            # Top unmatched examples (helps spot team/opponent/code drift)
+            q_unmatched = """
+              WITH p AS (
+                SELECT CAST(date AS DATE) AS d,
+                       CAST(game_id AS BIGINT) AS gid,
+                       UPPER(TRIM(team)) AS t,
+                       UPPER(TRIM(opponent)) AS o,
+                       CAST(player_id AS BIGINT) AS pid,
+                       target
+                FROM fact_predictions
+                WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
+              ),
+              a AS (
+                SELECT CAST(date AS DATE) AS d,
+                       CAST(game_id AS BIGINT) AS gid,
+                       UPPER(TRIM(team)) AS t,
+                       UPPER(TRIM(opponent)) AS o,
+                       CAST(player_id AS BIGINT) AS pid,
+                       target,
+                       actual
+                FROM fact_actuals
+                WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
+              )
+              SELECT p.d, p.gid, p.t, p.o, p.pid, p.target
+              FROM p
+              LEFT JOIN a
+                ON a.d = p.d AND a.gid = p.gid AND a.t = p.t
+               AND a.o = p.o AND a.pid = p.pid AND a.target = p.target
+              WHERE a.actual IS NULL
+              ORDER BY p.d DESC, p.gid DESC
+              LIMIT 20
+            """
+            try:
+                um = con.execute(q_unmatched).fetchdf()
+                print("\nfirst 20 unmatched rows:")
+                print(um.to_string(index=False))
+            except Exception as e:
+                print("Unmatched sample failed:", e)
+
             con.close()
             PY
+
 
 
       - name: Diagnose DuckDB path and row counts

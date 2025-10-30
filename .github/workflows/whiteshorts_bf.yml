@@ -76,24 +76,24 @@ jobs:
           INPUT_END: ${{ github.event.inputs.end }}
         run: |
           python - <<'PY'
-import os
-import sys
-import pandas as pd
+            import os
+            import sys
+            import pandas as pd
 
-s_raw = (os.getenv("INPUT_START") or "").strip()
-e_raw = (os.getenv("INPUT_END") or "").strip()
-s = pd.to_datetime(s_raw, dayfirst=True, errors="coerce")
-e = pd.to_datetime(e_raw, dayfirst=True, errors="coerce")
+            s_raw = (os.getenv("INPUT_START") or "").strip()
+            e_raw = (os.getenv("INPUT_END") or "").strip()
+            s = pd.to_datetime(s_raw, dayfirst=True, errors="coerce")
+            e = pd.to_datetime(e_raw, dayfirst=True, errors="coerce")
 
-if pd.isna(s) or pd.isna(e) or s > e:
-    raise SystemExit(f"Invalid range: start='{s_raw}' end='{e_raw}'")
-rng = pd.date_range(s.normalize(), e.normalize(), freq="D")
-with
-open(os.environ["GITHUB_OUTPUT"], "a") as fh:
-    fh.write(f"start_norm={rng.min().date()}\n")
-    fh.write(f"end_norm={rng.max().date()}\n")
-    fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n") 
-PY
+            if pd.isna(s) or pd.isna(e) or s > e:
+                raise SystemExit(f"Invalid range: start='{s_raw}' end='{e_raw}'")
+            rng = pd.date_range(s.normalize(), e.normalize(), freq="D")
+            with
+            open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+                fh.write(f"start_norm={rng.min().date()}\n")
+                fh.write(f"end_norm={rng.max().date()}\n")
+                fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n") 
+      PY
 
       - name: Upload API probe artifacts
         uses: actions/upload-artifact@v4

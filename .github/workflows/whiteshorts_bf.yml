@@ -88,7 +88,7 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               fh.write(f"start_norm={rng.min().date()}\n")
               fh.write(f"end_norm={rng.max().date()}\n")
-              fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n"                                                          
+              fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n")                                                          
           PY
 
             - name: Upload API probe artifacts

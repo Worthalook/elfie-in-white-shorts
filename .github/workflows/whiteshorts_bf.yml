@@ -11,7 +11,7 @@ on:
       end:
         description: "Backfill end date (YYYY-MM-DD or DD/MM/YYYY)"
         required: true
-        default: "2025-30-10"
+        default: "2025-29-10"
       build_dashboards:
         description: "Build dashboards after backfill?"
         required: true
@@ -76,8 +76,6 @@ jobs:
           INPUT_END: ${{ github.event.inputs.end }}
         run: |
           python - << 'PY'
-          import os, sys
-          import pandas as pd
           s_raw = (os.getenv("INPUT_START") or "").strip()
           e_raw = (os.getenv("INPUT_END") or "").strip()
           s = pd.to_datetime(s_raw, dayfirst=True, errors="coerce")

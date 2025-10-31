@@ -75,32 +75,30 @@ jobs:
           INPUT_START: ${{ github.event.inputs.start }}
           INPUT_END: ${{ github.event.inputs.end }}
         run: |
-          python - <<'PY'
+            python - <<'PY'
             import os
             import sys
             import pandas as pd
-
             s_raw = (os.getenv("INPUT_START") or "").strip()
             e_raw = (os.getenv("INPUT_END") or "").strip()
             s = pd.to_datetime(s_raw, dayfirst=True, errors="coerce")
             e = pd.to_datetime(e_raw, dayfirst=True, errors="coerce")
-
             if pd.isna(s) or pd.isna(e) or s > e:
-                raise SystemExit(f"Invalid range: start='{s_raw}' end='{e_raw}'")
+            raise SystemExit(f"Invalid range: start='{s_raw}' end='{e_raw}'")
             rng = pd.date_range(s.normalize(), e.normalize(), freq="D")
             with
             open(os.environ["GITHUB_OUTPUT"], "a") as fh:
-                fh.write(f"start_norm={rng.min().date()}\n")
-                fh.write(f"end_norm={rng.max().date()}\n")
-                fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n") 
-      PY
+            fh.write(f"start_norm={rng.min().date()}\n")
+            fh.write(f"end_norm={rng.max().date()}\n")
+            fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n") 
+       PY
 
       - name: Upload API probe artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: api-probe-actuals
-          path: data/debug/*.*
-          retention-days: 7
+           name: api-probe-actuals
+           path: data/debug/*.*
+           retention-days: 7
 
       - name: Backfill actuals into DuckDB (day-by-day)
         env:    
@@ -132,59 +130,59 @@ jobs:
 
       - name: Verify actuals written & overlap with predictions
         run: |
-          python - <<'PY'
-import os, duckdb
-db = os.getenv("DUCKDB_PATH","data/white_shorts.duckdb")
-con = duckdb.connect(db)
+            python - <<'PY'
+            import os, duckdb
+            db = os.getenv("DUCKDB_PATH","data/white_shorts.duckdb")
+            con = duckdb.connect(db)
 
-def cnt(tbl):
-    try: return con.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
-    except: return "missing"
+            def cnt(tbl):
+                try: return con.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
+                except: return "missing"
 
-print("counts:", {"fact_predictions": cnt("fact_predictions"), "fact_actuals": cnt("fact_actuals")})
+            print("counts:", {"fact_predictions": cnt("fact_predictions"), "fact_actuals": cnt("fact_actuals")})
 
-# show last few dates for each
-try:
-    print("recent actual dates:")
-    print(con.execute("SELECT DISTINCT date FROM fact_actuals ORDER BY date DESC LIMIT 10").fetchdf().to_string(index=False))
-except Exception as e:
-    print("fact_actuals missing:", e)
+            # show last few dates for each
+            try:
+                print("recent actual dates:")
+                print(con.execute("SELECT DISTINCT date FROM fact_actuals ORDER BY date DESC LIMIT 10").fetchdf().to_string(index=False))
+            except Exception as e:
+                print("fact_actuals missing:", e)
 
-try:
-    print("recent pred dates:")
-    print(con.execute("SELECT DISTINCT date FROM fact_predictions ORDER BY date DESC LIMIT 10").fetchdf().to_string(index=False))
-except Exception as e:
-    print("fact_predictions missing:", e)
+            try:
+                print("recent pred dates:")
+                print(con.execute("SELECT DISTINCT date FROM fact_predictions ORDER BY date DESC LIMIT 10").fetchdf().to_string(index=False))
+            except Exception as e:
+                print("fact_predictions missing:", e)
 
-# normalized join
-q = """
-WITH p AS (
-    SELECT CAST(date AS DATE) AS d, CAST(game_id AS BIGINT) AS gid,
-            UPPER(TRIM(team)) AS t, UPPER(TRIM(opponent)) AS o,
-            CAST(player_id AS BIGINT) AS pid, target
-    FROM fact_predictions
-    WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
-),
-a AS (
-    SELECT CAST(date AS DATE) AS d, CAST(game_id AS BIGINT) AS gid,
-            UPPER(TRIM(team)) AS t, UPPER(TRIM(opponent)) AS o,
-            CAST(player_id AS BIGINT) AS pid, target, actual
-    FROM fact_actuals
-    WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
-)
-SELECT p.d AS date,
-        COUNT(*) AS preds,
-        SUM(CASE WHEN a.actual IS NOT NULL THEN 1 ELSE 0 END) AS matched
-FROM p LEFT JOIN a USING (d,gid,t,o,pid,target)
-GROUP BY 1 ORDER BY 1 DESC LIMIT 14
-"""
-try:
-    print("join sample (last 14 days):")
-    print(con.execute(q).fetchdf().to_string(index=False))
-except Exception as e:
-    print("Join diagnostic failed:", e)
-con.close()
-PY
+            # normalized join
+            q = """
+            WITH p AS (
+                SELECT CAST(date AS DATE) AS d, CAST(game_id AS BIGINT) AS gid,
+                        UPPER(TRIM(team)) AS t, UPPER(TRIM(opponent)) AS o,
+                        CAST(player_id AS BIGINT) AS pid, target
+                FROM fact_predictions
+                WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
+            ),
+            a AS (
+                SELECT CAST(date AS DATE) AS d, CAST(game_id AS BIGINT) AS gid,
+                        UPPER(TRIM(team)) AS t, UPPER(TRIM(opponent)) AS o,
+                        CAST(player_id AS BIGINT) AS pid, target, actual
+                FROM fact_actuals
+                WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
+            )
+            SELECT p.d AS date,
+                    COUNT(*) AS preds,
+                    SUM(CASE WHEN a.actual IS NOT NULL THEN 1 ELSE 0 END) AS matched
+            FROM p LEFT JOIN a USING (d,gid,t,o,pid,target)
+            GROUP BY 1 ORDER BY 1 DESC LIMIT 14
+            """
+            try:
+                print("join sample (last 14 days):")
+                print(con.execute(q).fetchdf().to_string(index=False))
+            except Exception as e:
+                print("Join diagnostic failed:", e)
+            con.close()
+       PY
 
 
 
@@ -198,31 +196,31 @@ PY
             ls -lh "$DUCKDB_PATH" || true
 
             python - <<'PY'
-import os, sys, pandas as pd, duckdb
-from white_shorts.config import settings
-db_env = os.getenv("DUCKDB_PATH")
-print("settings.DUCKDB_PATH =", settings.DUCKDB_PATH)
-print("env DUCKDB_PATH      =", db_env)
+            import os, sys, pandas as pd, duckdb
+            from white_shorts.config import settings
+            db_env = os.getenv("DUCKDB_PATH")
+            print("settings.DUCKDB_PATH =", settings.DUCKDB_PATH)
+            print("env DUCKDB_PATH      =", db_env)
 
-con = duckdb.connect(db_env or settings.DUCKDB_PATH)
-try:
-    # Show attached DBs
-    print(con.execute("PRAGMA database_list").fetchdf().to_string(index=False))
+            con = duckdb.connect(db_env or settings.DUCKDB_PATH)
+            try:
+                # Show attached DBs
+                print(con.execute("PRAGMA database_list").fetchdf().to_string(index=False))
 
-    # Table counts (handle missing tables gracefully)
-    def count_safe(tbl):
-        try:
-            return con.execute(f"SELECT COUNT(*) AS n FROM {tbl}").fetchone()[0]
-        except Exception as e:
-            return f"missing ({e.__class__.__name__})"
+                # Table counts (handle missing tables gracefully)
+                def count_safe(tbl):
+                    try:
+                        return con.execute(f"SELECT COUNT(*) AS n FROM {tbl}").fetchone()[0]
+                    except Exception as e:
+                        return f"missing ({e.__class__.__name__})"
 
-    fa = count_safe("fact_actuals")
-    fp = count_safe("fact_predictions")
-    print("fact_actuals rows: ", fa)
-    print("fact_predictions rows:", fp)
-finally:
-    con.close()
-PY
+                fa = count_safe("fact_actuals")
+                fp = count_safe("fact_predictions")
+                print("fact_actuals rows: ", fa)
+                print("fact_predictions rows:", fp)
+            finally:
+                con.close()
+       PY
 
 
       - name: Ensure .gitignore allows DuckDB and data (but still ignore models/)
@@ -241,19 +239,19 @@ PY
       - name: Bump repo_state in DuckDB to ensure commit (backfill only)
         run: |
           python - <<'PY'
-import os, duckdb, pandas as pd
-db = os.getenv("DUCKDB_PATH", "data/white_shorts.duckdb")
-con = duckdb.connect(db)
-try:
-con.execute("CREATE TABLE IF NOT EXISTS repo_state (ts TIMESTAMP, note VARCHAR)")
-con.execute("INSERT INTO repo_state VALUES (now(), ?)", [f"backfill run on {os.getenv('GITHUB_RUN_ID','local')}"])
-# Force a checkpoint to flush WAL (ensures file bytes change)
-con.execute("CHECKPOINT")
-n = con.execute("SELECT COUNT(*) FROM repo_state").fetchone()[0]
-print("repo_state rows:", n)
-finally:
-con.close()
-PY
+            import os, duckdb, pandas as pd
+            db = os.getenv("DUCKDB_PATH", "data/white_shorts.duckdb")
+            con = duckdb.connect(db)
+            try:
+            con.execute("CREATE TABLE IF NOT EXISTS repo_state (ts TIMESTAMP, note VARCHAR)")
+            con.execute("INSERT INTO repo_state VALUES (now(), ?)", [f"backfill run on {os.getenv('GITHUB_RUN_ID','local')}"])
+            # Force a checkpoint to flush WAL (ensures file bytes change)
+            con.execute("CHECKPOINT")
+            n = con.execute("SELECT COUNT(*) FROM repo_state").fetchone()[0]
+            print("repo_state rows:", n)
+            finally:
+            con.close()
+        PY
 
       - name: Show DuckDB size after bump
         run: |

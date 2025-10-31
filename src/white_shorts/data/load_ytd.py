@@ -1,4 +1,4 @@
-⁹﻿from __future__ import annotations
+from __future__ import annotations
 import pandas as pd
 from pathlib import Path
 from ..utils.validation import REQUIRED_YTD_COLUMNS, ensure_columns

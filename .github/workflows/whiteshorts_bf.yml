@@ -91,7 +91,7 @@ jobs:
             fh.write(f"start_norm={rng.min().date()}\n")
             fh.write(f"end_norm={rng.max().date()}\n")
             fh.write(f"days={','.join(d.date().isoformat() for d in rng)}\n") 
-       PY
+            PY
 
       - name: Upload API probe artifacts
         uses: actions/upload-artifact@v4
@@ -182,7 +182,7 @@ jobs:
             except Exception as e:
                 print("Join diagnostic failed:", e)
             con.close()
-       PY
+            PY
 
 
 
@@ -220,7 +220,7 @@ jobs:
                 print("fact_predictions rows:", fp)
             finally:
                 con.close()
-       PY
+            PY
 
 
       - name: Ensure .gitignore allows DuckDB and data (but still ignore models/)
@@ -239,19 +239,19 @@ jobs:
       - name: Bump repo_state in DuckDB to ensure commit (backfill only)
         run: |
           python - <<'PY'
-            import os, duckdb, pandas as pd
-            db = os.getenv("DUCKDB_PATH", "data/white_shorts.duckdb")
-            con = duckdb.connect(db)
-            try:
-            con.execute("CREATE TABLE IF NOT EXISTS repo_state (ts TIMESTAMP, note VARCHAR)")
-            con.execute("INSERT INTO repo_state VALUES (now(), ?)", [f"backfill run on {os.getenv('GITHUB_RUN_ID','local')}"])
-            # Force a checkpoint to flush WAL (ensures file bytes change)
-            con.execute("CHECKPOINT")
-            n = con.execute("SELECT COUNT(*) FROM repo_state").fetchone()[0]
-            print("repo_state rows:", n)
-            finally:
+          import os, duckdb, pandas as pd
+          db = os.getenv("DUCKDB_PATH", "data/white_shorts.duckdb")
+          con = duckdb.connect(db)
+          try:
+              con.execute("CREATE TABLE IF NOT EXISTS repo_state (ts TIMESTAMP, note VARCHAR)")
+              con.execute("INSERT INTO repo_state VALUES (now(), ?)", [f"backfill run on {os.getenv('GITHUB_RUN_ID','local')}"])
+              # Force a checkpoint to flush WAL (ensures file bytes change)
+              con.execute("CHECKPOINT")
+              n = con.execute("SELECT COUNT(*) FROM repo_state").fetchone()[0]
+              print("repo_state rows:", n)
+          finally:
             con.close()
-        PY
+          PY
 
       - name: Show DuckDB size after bump
         run: |

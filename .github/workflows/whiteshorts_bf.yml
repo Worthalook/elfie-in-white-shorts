@@ -86,7 +86,7 @@ jobs:
             if pd.isna(s) or pd.isna(e) or s > e:
                 raise SystemExit(f"Invalid range: start='{s_raw}' end='{e_raw}'")
             rng = pd.date_range(s.normalize(), e.normalize(), freq="D")
-            with:
+            with
             open(os.environ["GITHUB_OUTPUT"], "a") as fh:
                 fh.write(f"start_norm={rng.min().date()}\n")
                 fh.write(f"end_norm={rng.max().date()}\n")

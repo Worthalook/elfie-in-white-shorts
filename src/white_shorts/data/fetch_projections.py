@@ -1,19 +1,24 @@
 ﻿from __future__ import annotations
 import os
+from sys import api_version
 import pandas as pd
 import requests
+import typer
 
 
 API_KEY = os.getenv("SPORTSDATA_API_KEY", "")
 
 def _fmt_sportsdata_date(date_str: str) -> tuple[str, pd.Timestamp]:
     import pandas as pd
+    typer.echo(f"raw date - pre API prep: {date_str}")
     d = pd.to_datetime(date_str, dayfirst=True, errors="coerce")
     if pd.isna(d):
         raise ValueError(f"Unparseable date: {date_str}")
     # SportsData wants e.g. 2025-Oct-15
     mon = d.strftime("%b")  # Oct
+    typer.echo(f"formated month (for API) part: {mon}")
     api_token = f"{d.year}-{mon}-{d.day:02d}"
+    typer.echo(f"formated final date string for API: {api_token} and normalised: {d.normalize()}")
     return api_token, d.normalize()
 
 

@@ -109,7 +109,7 @@ jobs:
       # ---------- UPDATE ACTUALS FIRST (so dashboards have data) ----------
       - name: Update current-season with yesterday actuals
         run: |
-          python -m white_short.cli.update_history "${{ steps.dates.outputs.yesterday }}"
+          python -m white_shorts.cli.update_history "${{ steps.dates.outputs.yesterday }}"
 
       # ---------- (OPTIONAL) TRAIN ----------
       - name: Train QRF models (optional)

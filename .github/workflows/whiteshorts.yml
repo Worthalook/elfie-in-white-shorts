@@ -95,7 +95,6 @@ jobs:
 
           with
           print(f"slate={slate} yesterday={yday}")
-          with 
           open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               fh.write(f"slate={slate}\n")
               fh.write(f"yesterday={yday}\n")

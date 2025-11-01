@@ -52,7 +52,7 @@ def fetch_player_projections_by_date(date_str: str) -> pd.DataFrame:
     rows = []
     for d in data:
         rows.append({
-            "date": f"{slate_dt.year}-{slate_dt.month}-{slate_dt.day:02d}",  # ← force slate date here too
+            "date": slate_dt, # f"{slate_dt.year}-{slate_dt.month}-{slate_dt.day:02d}",  # ← force slate date here too
             "game_id": game_id,
             "team": team,
             "opponent": opp,

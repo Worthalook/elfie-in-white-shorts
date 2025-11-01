@@ -90,7 +90,7 @@ jobs:
                   raise SystemExit(f"Unparseable override_date: {override}")
               slate = d.date()
           else:
-              slate = (now_au + timedelta(days=1)).date()   # 'tomorrow' AU for projections'
+              slate = (now_au).date()   # 'tomorrow' AU for projections'
           yday = (slate - timedelta(days=1))               # yesterday relative to slate
           print(f"slate={slate} yesterday={yday}")
           
@@ -108,7 +108,7 @@ jobs:
       # ---------- UPDATE ACTUALS FIRST (so dashboards have data) ----------
       - name: Update current-season with yesterday actuals
         run: |
-          python -m white_shorts.cli.update_history "${{ steps.dates.outputs.yesterday }}"
+          python -m white_short.cli.update_history "${{ steps.dates.outputs.yesterday }}"
 
       # ---------- (OPTIONAL) TRAIN ----------
       - name: Train QRF models (optional)

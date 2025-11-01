@@ -16,7 +16,7 @@ on:
         default: ""
   schedule:
      # 09:05 Melbourne time daily ~= 22:05 UTC previous day
-     - cron: "05 22 * * *"
+     - cron: "19 22 * * *"
 
 jobs:
   ws-pipeline:
@@ -92,9 +92,9 @@ jobs:
           else:
               slate = (now_au + timedelta(days=1)).date()   # 'tomorrow' AU for projections'
           yday = (slate - timedelta(days=1))               # yesterday relative to slate
-
-          with
           print(f"slate={slate} yesterday={yday}")
+          
+          with
           open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               fh.write(f"slate={slate}\n")
               fh.write(f"yesterday={yday}\n")

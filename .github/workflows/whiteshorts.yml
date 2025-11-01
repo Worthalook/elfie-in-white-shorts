@@ -91,7 +91,10 @@ jobs:
               slate = d.date()
           else:
               slate = (now_au).date()   # 'tomorrow' AU for projections'
+          
+          # yesterday relative to slate
           yday = (slate - timedelta(days=1))               # yesterday relative to slate
+
           print(f"slate={slate} yesterday={yday}")
           
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:

@@ -90,12 +90,14 @@ jobs:
                   raise SystemExit(f"Unparseable override_date: {override}")
               slate = d.date()
           else:
-              slate = (now_au + timedelta(days=1)).date()   # 'tomorrow' AU for projections
-          yday  = (slate - timedelta(days=1))               # yesterday relative to slate
+              slate = (now_au + timedelta(days=1)).date()   # 'tomorrow' AU for projections'
+          yday = (slate - timedelta(days=1))               # yesterday relative to slate
 
-          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+          with
+          open(os.environ["GITHUB_OUTPUT"], "a") as fh:
               fh.write(f"slate={slate}\n")
               fh.write(f"yesterday={yday}\n")
+
           PY
 
       # ---------- PREP DATA ----------

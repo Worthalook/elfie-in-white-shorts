@@ -110,7 +110,19 @@ jobs:
       - name: Update current-season with yesterday actuals
         run: |
           python -m white_shorts.cli.update_history "${{ steps.dates.outputs.yesterday }}"
-
+      # ---------- COMMIT SLATES ARTIFACT TO BRANCH ----------
+      - name: Commit slates to branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/slates/*.csv || true
+        
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Slate artifacts for ${{ steps.dates.outputs.slate }} [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
       # ---------- (OPTIONAL) TRAIN ----------
       - name: Train QRF models (optional)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_training == 'true' }}

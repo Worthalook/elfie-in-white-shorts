@@ -110,12 +110,12 @@ jobs:
       - name: Update current-season with yesterday actuals
         run: |
           python -m white_shorts.cli.update_history "${{ steps.dates.outputs.yesterday }}"
-      # ---------- COMMIT SLATES ARTIFACT TO BRANCH ----------
+      # ---------- COMMIT SLATE ARTIFACT TO BRANCH ----------
       - name: Commit slates to branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A data/slates/*.csv || true
+          git add -A data\slates\*.parquet" || true
         
           if git diff --cached --quiet; then
             echo "No changes to commit."
@@ -135,7 +135,8 @@ jobs:
       # ---------- PREDICT ----------
       - name: Predict from saved slate
         run: |
-          SLATE_PATH="data/slates/slate_2025-01-11.parquet"
+          SLATE_PATH="data/slates/slate_${{ steps.dates.outputs.slate }}.parquet"
+          # SLATE_PATH="data/slates/slate_2025-01-11.parquet"
           if [ ! -f "$SLATE_PATH" ]; then  
             echo "Slate not found: $SLATE_PATH"; exit 1
           fi

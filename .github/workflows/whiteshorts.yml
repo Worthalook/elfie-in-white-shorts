@@ -106,7 +106,8 @@ jobs:
       # ---------- PREP DATA ----------
       - name: Fetch slate (players & games) for slate date
         run: |
-          python -m white_shorts.cli.fetch_slate "${{ steps.dates.outputs.slate }}"
+          python -m white_shorts.cli.fetch_slate "slate_2025-03-11.parquet
+          #${{ steps.dates.outputs.slate }}"
 
       # ---------- UPDATE ACTUALS FIRST (so dashboards have data) ----------
       - name: Update current-season with yesterday actuals
@@ -137,7 +138,7 @@ jobs:
       # ---------- PREDICT ----------
       - name: Predict from saved slate
         run: |
-          SLATE_PATH="data/slates/slate_${{ steps.dates.outputs.slate }}.parquet"    #2025-11-03.parquet" #slate_
+          SLATE_PATH="data/slates/slate_2025-03-11.parquet" #${{ steps.dates.outputs.slate }}.parquet"    #2025-11-03.parquet" #slate_
           # SLATE_PATH="data/slates/slate_2025-01-11.parquet"
           if [ ! -f "$SLATE_PATH" ]; then  
             echo "Slate not found: $SLATE_PATH"; exit 1

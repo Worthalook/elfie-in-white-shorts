@@ -106,7 +106,7 @@ jobs:
       # ---------- PREP DATA ----------
       - name: Fetch slate (players & games) for slate date
         run: |
-          python -m white_shorts.cli.fetch_slate "slate_2025-03-11.parquet"
+          python -m white_shorts.cli.fetch_slate "2025-03-11"
           #${{ steps.dates.outputs.slate }}"
 
       # ---------- UPDATE ACTUALS FIRST (so dashboards have data) ----------

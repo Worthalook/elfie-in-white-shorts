@@ -137,8 +137,8 @@ jobs:
       # ---------- PREDICT ----------
       - name: Predict from saved slate
         run: |
-          SLATE_PATH="data/slates/slate_2025-11-04.parquet" #slate_${{ steps.dates.outputs.slate }}.parquet"
-          # SLATE_PATH="data/slates/slate_2025-01-11.parquet"
+          SLATE_PATH="data/slates/slate_2025-04-11.parquet" #slate_${{ steps.dates.outputs.slate }}.parquet"
+          # SLATE_PATH="data/slates/slate_2025-01-.parquet"
           if [ ! -f "$SLATE_PATH" ]; then  
             echo "Slate not found: $SLATE_PATH"; exit 1
           fi

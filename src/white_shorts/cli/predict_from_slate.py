@@ -24,6 +24,33 @@ def _bundle_from_loaded(d):
     b.model_name = d["model_name"]; b.model_version = d["model_version"]
     return b
 
+from pathlib import Path
+import os, pandas as pd
+
+def _resolve_slate_path(s: str, base="data/slates") -> Path | None:
+    # If a direct .parquet path was passed, honor it
+    p = Path(s)
+    if p.suffix == ".parquet" and p.exists():
+        return p
+
+    d = pd.to_datetime(s, dayfirst=True, errors="coerce")
+    if pd.isna(d):
+        return None
+
+    iso = d.date().isoformat()                 # YYYY-MM-DD
+    dmy = d.strftime("%Y-%d-%m")               # legacy pattern (buggy past runs)
+
+    basep = Path(os.getenv("WS_SLATES_DIR", base))
+    for name in (f"slate_{iso}.parquet", f"slate_{dmy}.parquet"):
+        cand = basep / name
+        if cand.exists():
+            return cand
+    return None
+
+
+
+
+
 def _load_or_train(prefix: str, df_feat: pd.DataFrame, features: list[str], target: str):
     d = load_latest(prefix, features)
     if d and d.get("features") == features:
@@ -42,6 +69,19 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
     init_db()
 
     # 0) Load slate (authoritative identifiers: date, game_id, team, opponent, player_id, name)
+    
+    # then use it:
+    path = _resolve_slate_path(slate_parquet)
+    if path is None or not path.exists():
+        print(f"[predict_from_slate] Slate not found for {slate_parquet}")
+        raise SystemExit(0)
+
+    df = pd.read_parquet(path)
+    if df.empty:
+        print(f"[predict_from_slate] Empty slate → {path}. Nothing to predict.")
+        raise SystemExit(0)
+
+
     proj = pd.read_parquet(slate_parquet)
     if proj.empty:
         typer.echo("Slate is empty; nothing to predict.")

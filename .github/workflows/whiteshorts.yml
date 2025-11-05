@@ -127,7 +127,7 @@ jobs:
           fi
       # ---------- (OPTIONAL) TRAIN ----------
       - name: Train QRF models (optional)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_training == 'true' }}
+        #if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_training == 'true' }}
         run: |
           python -m white_shorts.cli.train_qrf all --version 0.3.0
           # Train all four targets, prefer DuckDB (120d), fall back to API (30d)

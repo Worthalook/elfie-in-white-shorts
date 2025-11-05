@@ -146,13 +146,11 @@ jobs:
             #$SLATE_PATH = SLATE_PATH_2  
           fi
 
-          if [ ! -f "$SLATE_PATH_2" ]; then  
+          #if [ ! -f "$SLATE_PATH_2" ]; then  
             #echo "Slate not found: $SLATE_PATH_2";exit 1
-          fi
+          #fi
 
-          python -m white_shorts.cli.predict_from_slate "$SLATE_PATH" \
-            --ytd-csv "data/NHL_2023_24.csv" \
-            --out-dir "${{ env.WS_PARQUET_DIR }}"
+          python -m white_shorts.cli.predict_from_slate "$SLATE_PATH" --ytd-csv "data/NHL_2023_24.csv"  --out-dir "${{ env.WS_PARQUET_DIR }}"
 
       # ---------- COLLECT & UPLOAD PRED ARTIFACT ----------
       - name: List prediction CSVs

@@ -137,10 +137,17 @@ jobs:
       # ---------- PREDICT ----------
       - name: Predict from saved slate
         run: |
-          SLATE_PATH="data/slates/slate_2025-04-11.parquet" #slate_${{ steps.dates.outputs.slate }}.parquet"
+          SLATE_PATH="data/slates/slate_2025-4-11.parquet" #slate_${{ steps.dates.outputs.slate }}.parquet"
+          SLATE_PATH_2="data/slates/slate_2025-04-11.parquet"
+          
           # SLATE_PATH="data/slates/slate_2025-01-.parquet"
           if [ ! -f "$SLATE_PATH" ]; then  
-            echo "Slate not found: $SLATE_PATH"; exit 1
+            echo "Slate not found: $SLATE_PATH"; 
+            $SLATE_PATH = SLATE_PATH_2
+            
+          fi
+          if [ ! -f "$SLATE_PATH_2" ]; then  
+            echo "Slate not found: $SLATE_PATH_2";exit 1
           fi
           python -m white_shorts.cli.predict_from_slate "$SLATE_PATH" \
             --ytd-csv "data/NHL_2023_24.csv" \

@@ -19,9 +19,9 @@ app = typer.Typer(help="Predict using a saved slate parquet (players+games) as t
 
 def _parse_date(date_str: str) -> pd.Timestamp:
     #try:
-    typer.echo(f"UN___PARSE DATE: {date_str}")
+    #typer.echo(f"UN___PARSE DATE: {date_str}")
     d = pd.to_datetime(date_str, format='%Y-%m-%d')
-    typer.echo(f"PARSE DATE: {d}")
+    #typer.echo(f"PARSE DATE: {d}")
     # except Exception:
         
     if pd.isna(d):

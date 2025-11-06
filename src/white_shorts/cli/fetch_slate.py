@@ -10,7 +10,7 @@ app = typer.Typer(help="Fetch projections slate (players+games)")
 def _parse_date(date_str: str) -> pd.Timestamp:
     #try:
     d = pd.to_datetime(date_str, format='%Y-%m-%d')
-    typer.echo(f"PARSE DATE: {d}")
+    #typer.echo(f"PARSE DATE: {d}")
     # except Exception:
         
     if pd.isna(d):

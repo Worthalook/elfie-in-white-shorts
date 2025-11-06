@@ -1,0 +1,170 @@
+name: WS daily pipeline (ASeT)
+
+on:
+  push:
+    branches: [ "working-order" ]
+
+  workflow_dispatch:
+    inputs:
+      date_start:
+        description: "Date Start"
+        required: true
+        default: "2025-11-06"
+      days:
+        description: "Historical Days to update"
+        required: true
+        default: "10"
+
+jobs:
+  ws-pipeline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write    # needed to push data back to the repo
+      actions: read
+      checks: read
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONUNBUFFERED: "1"
+      WS_SLATES_DIR: data/slates
+      WS_PARQUET_DIR: data/parquet
+      WS_CURRENT_SEASON_PARQUET: data/current_season.parquet
+      DUCKDB_PATH: data/white_shorts.duckdb     # <— ensure this matches settings.DUCKDB_PATH
+      SPORTS_DATA_BASE: https://api.sportsdata.io
+      SPORTS_DATA_API_KEY: ${{ secrets.SPORTS_DATA_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          # If you later move DuckDB to Git LFS, also add:
+          # lfs: true
+
+      - name: Add src to PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/src:$PYTHONPATH" >> $GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install typer duckdb joblib scikit-learn statsmodels pandas pyarrow requests
+
+
+      - name: Update current-season with yesterday actuals
+        run: |
+          python -m white_shorts.cli.update_history "2025-11-01"
+ 
+     
+
+      - name: Build dashboards (60d)
+        run: |
+            python -m white_shorts.cli.dashboards build --days 60 --out data/dashboards
+
+
+      - name: Verify actuals written & overlap with predictions
+        run: |
+            python - <<'PY'
+            import os, duckdb
+            db = os.getenv("DUCKDB_PATH","data/white_shorts.duckdb")
+            con = duckdb.connect(db)
+
+            def cnt(tbl):
+                try: return con.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
+                except: return "missing"
+
+            print("counts:", {"fact_predictions": cnt("fact_predictions"), "fact_actuals": cnt("fact_actuals")})
+
+            # show last few dates for each
+            try:
+                print("recent actual dates:")
+                print(con.execute("SELECT DISTINCT date FROM fact_actuals ORDER BY date DESC LIMIT 10").fetchdf().to_string(index=False))
+            except Exception as e:
+                print("fact_actuals missing:", e)
+
+            try:
+                print("recent pred dates:")
+                print(con.execute("SELECT DISTINCT date FROM fact_predictions ORDER BY date DESC LIMIT 10").fetchdf().to_string(index=False))
+            except Exception as e:
+                print("fact_predictions missing:", e)
+
+            # normalized join
+            q = """
+            WITH p AS (
+                SELECT CAST(date AS DATE) AS d, CAST(game_id AS BIGINT) AS gid,
+                        UPPER(TRIM(team)) AS t, UPPER(TRIM(opponent)) AS o,
+                        CAST(player_id AS BIGINT) AS pid, target
+                FROM fact_predictions
+                WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
+            ),
+            a AS (
+                SELECT CAST(date AS DATE) AS d, CAST(game_id AS BIGINT) AS gid,
+                        UPPER(TRIM(team)) AS t, UPPER(TRIM(opponent)) AS o,
+                        CAST(player_id AS BIGINT) AS pid, target, actual
+                FROM fact_actuals
+                WHERE date >= (CURRENT_DATE - INTERVAL 30 DAY)
+            )
+            SELECT p.d AS date,
+                    COUNT(*) AS preds,
+                    SUM(CASE WHEN a.actual IS NOT NULL THEN 1 ELSE 0 END) AS matched
+            FROM p LEFT JOIN a USING (d,gid,t,o,pid,target)
+            GROUP BY 1 ORDER BY 1 DESC LIMIT 14
+            """
+            try:
+                print("join sample (last 14 days):")
+                print(con.execute(q).fetchdf().to_string(index=False))
+            except Exception as e:
+                print("Join diagnostic failed:", e)
+            con.close()
+            PY
+
+
+
+
+      - name: Diagnose DuckDB path and row counts
+        run: |
+            echo "DuckDB path (env): $DUCKDB_PATH"
+            if [ ! -f "$DUCKDB_PATH" ]; then
+              echo "::error file=$DUCKDB_PATH::DuckDB file not found at that path."; exit 1
+            fi
+            ls -lh "$DUCKDB_PATH" || true
+
+            python - <<'PY'
+            import os, sys, pandas as pd, duckdb
+            from white_shorts.config import settings
+            db_env = os.getenv("DUCKDB_PATH")
+            print("settings.DUCKDB_PATH =", settings.DUCKDB_PATH)
+            print("env DUCKDB_PATH      =", db_env)
+
+            con = duckdb.connect(db_env or settings.DUCKDB_PATH)
+            try:
+                # Show attached DBs
+                print(con.execute("PRAGMA database_list").fetchdf().to_string(index=False))
+
+                # Table counts (handle missing tables gracefully)
+                def count_safe(tbl):
+                    try:
+                        return con.execute(f"SELECT COUNT(*) AS n FROM {tbl}").fetchone()[0]
+                    except Exception as e:
+                        return f"missing ({e.__class__.__name__})"
+
+                fa = count_safe("fact_actuals")
+                fp = count_safe("fact_predictions")
+                print("fact_actuals rows: ", fa)
+                print("fact_predictions rows:", fp)
+            finally:
+                con.close()
+            PY

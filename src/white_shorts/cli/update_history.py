@@ -92,6 +92,7 @@ def _to_long(df: pd.DataFrame) -> pd.DataFrame:
 def main(date: str):
     """Upsert actuals for a single date (accepts YYYY-MM-DD or DD/MM/YYYY)."""
     d = pd.to_datetime(date, dayfirst=True, errors="coerce")
+    typer.echo(f"update_history DATE: {d}")
     if pd.isna(d):
         raise typer.BadParameter(f"Unparseable date: {date}")
     iso = d.strftime("%Y-%m-%d")
@@ -125,12 +126,16 @@ def main(date: str):
             DELETE FROM fact_actuals
             WHERE date = ?
         """, [pd.Timestamp(iso).date()])
-
+        typer.echo(f"update_history CLOSING: {pd.Timestamp(iso).date()}")
         if not long.empty:
+            typer.echo(f"update_history PRE_DB_Execute")
             con.execute("INSERT INTO fact_actuals SELECT * FROM long", {"long": long})
+            typer.echo(f"update_history POST_DB_Execute")
             # ensure physical write
             con.execute("CHECKPOINT")
+            typer.echo(f"update_history POST_DB_CheckPoint")
     finally:
+        typer.echo(f"update_history CLOSING")
         con.close()
 
     print(f"Upserted actuals for {iso}: {len(long)} rows")

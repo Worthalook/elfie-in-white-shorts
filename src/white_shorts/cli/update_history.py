@@ -17,7 +17,7 @@ app = typer.Typer(help="Update current-season history (actuals) into DuckDB")
 
 # SportsData.IO → canonical
 FIELD_MAP = {
-    "Date": "date",
+    "DateTime": "date",
     "GameID": "game_id",
     "Team": "team",
     "Opponent": "opponent",
@@ -29,7 +29,8 @@ FIELD_MAP = {
     "ShotsOnGoal": "shots_on_goal",
 }
 
-REQUIRED = ["Date","GameID","Team","Opponent","PlayerID","Name","Points","Goals","Assists","ShotsOnGoal"]
+REQUIRED = ["date","game_id","team","opponent","player_id","name","points","goals","assists","shots_on_goal"]
+#REQUIRED = ["Date","GameID","Team","Opponent","PlayerID","Name","Points","Goals","Assists","ShotsOnGoal"]
 
 def _parse_date(date_str: str) -> pd.Timestamp:
     #try:

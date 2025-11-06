@@ -137,7 +137,8 @@ jobs:
       # ---------- PREDICT ----------
       - name: Predict from saved slate
         run: |
-          SLATE_PATH="data/slates/slate_2025-11-05.parquet" #slate_${{ steps.dates.outputs.slate }}.parquet"
+          SLATE_PATH="data/slates/slate_${{ steps.dates.outputs.slate }}.parquet"
+          #echo "slate_${{ steps.dates.outputs.slate }}.parquet"
           # SLATE_PATH_2="data/slates/slate_2025-04-11.parquet"
           
           # SLATE_PATH="data/slates/slate_2025-01-.parquet"

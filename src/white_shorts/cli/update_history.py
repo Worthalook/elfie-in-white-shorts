@@ -134,6 +134,11 @@ def main(date: str):
     con = duckdb.connect(settings.DUCKDB_PATH)
     try:
         con.execute("""
+                    DROP TABLE fact_actuals;  
+                    """)
+        
+        con.execute("""
+                       
             CREATE TABLE IF NOT EXISTS fact_actuals (
               date DATE,
               game_id BIGINT,
@@ -163,7 +168,8 @@ def main(date: str):
                       CAST(player_id AS BIGINT) AS player_id,
                       COALESCE(name,'')         AS name,
                       target,
-                      CAST(actual AS DOUBLE)    AS actual
+                      CAST(actual AS DOUBLE)    AS actual,
+                        
                     FROM long;""")
 
             typer.echo(f"update_history POST_DB_Execute")

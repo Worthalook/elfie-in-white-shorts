@@ -35,7 +35,7 @@ REQUIRED = ["date","game_id","team","opponent","player_id","name","points","goal
 
 def _parse_date(date_str: str) -> pd.Timestamp:
     #try:
-    d = pd.to_datetime(date_str, format='%Y-%m-%dT%H %M %s')
+    d = pd.to_datetime(date_str, format='%Y-%m-%dT%H:%M:%S')
     typer.echo(f"UPd--HisT__PARSE DATE: {d}")
     # except Exception:
         

@@ -106,7 +106,7 @@ jobs:
       # ---------- PREP DATA ----------
       - name: Fetch slate (players & games) for slate date
         run: |
-          python -m white_shorts.cli.fetch_slate "2025-11-05" #"${{ steps.dates.outputs.slate }}"
+          python -m white_shorts.cli.fetch_slate "${{ steps.dates.outputs.slate }}"
 
       # ---------- UPDATE ACTUALS FIRST (so dashboards have data) ----------
       - name: Update current-season with yesterday actuals

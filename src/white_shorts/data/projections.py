@@ -15,6 +15,7 @@ def _parse_date(date_str: str) -> pd.Timestamp:
 
 def _sportsdata_token(d: pd.Timestamp) -> str:
     mon = d.strftime("%b")
+    typer.echo(f"API Token DATE: {d}")
     token = f"{d.year}-{mon}-{d.day:02d}"
     typer.echo(f"API Token: {token}.")
     return   #"2025-Nov-05"

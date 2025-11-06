@@ -64,7 +64,7 @@ jobs:
           pip install typer duckdb joblib scikit-learn statsmodels pandas pyarrow requests
 
 
-      - name: Update current-season with yesterday actuals
+      - name: Update current-season with ALL actuals
         run: |
           python -m white_shorts.cli.update_history "2025-10-08"
           python -m white_shorts.cli.update_history "2025-10-09"
@@ -205,6 +205,7 @@ jobs:
           # Consider Git LFS for binary DB if it grows large: git lfs track "data/*.duckdb"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull origin HEAD:${{ github.ref_name }}
           if [ -f "${{ env.DUCKDB_PATH }}" ]; then
             git add -f "${{ env.DUCKDB_PATH }}"
             if git diff --cached --quiet; then

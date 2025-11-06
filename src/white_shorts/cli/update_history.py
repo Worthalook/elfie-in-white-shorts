@@ -27,9 +27,10 @@ FIELD_MAP = {
     "Goals": "goals",
     "Assists": "assists",
     "ShotsOnGoal": "shots_on_goal",
+    "Minutes": "minutes"
 }
 
-REQUIRED = ["date","game_id","team","opponent","player_id","name","points","goals","assists","shots_on_goal"]
+REQUIRED = ["date","game_id","team","opponent","player_id","name","points","goals","assists","shots_on_goal","minutes"]
 #REQUIRED = ["DateTime","GameID","Team","Opponent","PlayerID","Name","Points","Goals","Assists","ShotsOnGoal"]
 
 def _parse_date(date_str: str) -> pd.Timestamp:
@@ -133,9 +134,9 @@ def main(date: str):
 
     con = duckdb.connect(settings.DUCKDB_PATH)
     try:
-        #con.execute("""
-        #            DROP TABLE fact_actuals;  
-        #            """)
+        con.execute("""
+                    DROP TABLE fact_actuals;  
+                    """)
         
         con.execute("""
                        
@@ -147,7 +148,8 @@ def main(date: str):
               player_id BIGINT,
               name VARCHAR,
               target VARCHAR,
-              actual DOUBLE
+              actual DOUBLE,
+              minutes DOUBLE      
             )
         """)
         # Upsert by replacing existing rows for the (date, keys, target)

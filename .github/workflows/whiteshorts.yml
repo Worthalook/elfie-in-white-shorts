@@ -1,8 +1,7 @@
 name: WS daily pipeline (ASeT)
 
 on:
-  push:
-    branches: [ "working-order" ]
+ 
 
   workflow_dispatch:
     inputs:

@@ -38,7 +38,7 @@ def _parse_date(date_str: str) -> pd.Timestamp:
         d = pd.to_datetime(date_str, format='%Y-%m-%dT%H:%M:%S')
         typer.echo(f"UPd--HisT__PARSE DATE: {d}")
     except Exception:
-        d  pd.to_datetime(date_str, format='%Y-%m-%d')
+        d = pd.to_datetime(date_str, format='%Y-%m-%d')
     if pd.isna(d):
         raise ValueError(f"Unparseable date: {date_str}")
     return d.normalize()

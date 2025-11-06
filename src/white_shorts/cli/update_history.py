@@ -30,7 +30,7 @@ FIELD_MAP = {
 }
 
 REQUIRED = ["date","game_id","team","opponent","player_id","name","points","goals","assists","shots_on_goal"]
-#REQUIRED = ["Date","GameID","Team","Opponent","PlayerID","Name","Points","Goals","Assists","ShotsOnGoal"]
+#REQUIRED = ["DateTime","GameID","Team","Opponent","PlayerID","Name","Points","Goals","Assists","ShotsOnGoal"]
 
 def _parse_date(date_str: str) -> pd.Timestamp:
     #try:
@@ -153,7 +153,19 @@ def main(date: str):
         typer.echo(f"update_history CLOSING: {pd.Timestamp(iso).date()}")
         if not long.empty:
             typer.echo(f"update_history PRE_DB_Execute")
-            con.execute("INSERT INTO fact_actuals SELECT * FROM long", {"long": long})
+            con.execute("""
+                INSERT INTO fact_actuals
+                    SELECT
+                      CAST(date AS DATE)        AS date,
+                      CAST(game_id AS BIGINT)   AS game_id,
+                      UPPER(TRIM(team))         AS team,
+                      UPPER(TRIM(opponent))     AS opponent,
+                      CAST(player_id AS BIGINT) AS player_id,
+                      COALESCE(name,'')         AS name,
+                      target,
+                      CAST(actual AS DOUBLE)    AS actual
+                    FROM tmp_long;""")
+
             typer.echo(f"update_history POST_DB_Execute")
             # ensure physical write
             con.execute("CHECKPOINT")

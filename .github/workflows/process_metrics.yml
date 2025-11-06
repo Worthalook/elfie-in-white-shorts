@@ -1,8 +1,8 @@
 ﻿name: WS One Off Process MEtrics
 
 on:
-  #push:
-    #branches: [ "working-order" ]
+  push:
+    branches: [ "working-order" ]
 
 
   workflow_dispatch:

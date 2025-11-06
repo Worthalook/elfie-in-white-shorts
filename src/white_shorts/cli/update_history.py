@@ -29,7 +29,7 @@ FIELD_MAP = {
     "ShotsOnGoal": "shots_on_goal",
 }
 
-REQUIRED = ["date","game_id","team","opponent","player_id","name","points","goals","assists","shots_on_goal"]
+REQUIRED = ["Date","GameID","Team","Opponent","PlayerID","Name","Points","Goals","Assists","ShotsOnGoal"]
 
 def _parse_date(date_str: str) -> pd.Timestamp:
     #try:

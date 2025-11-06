@@ -1,4 +1,4 @@
-name: WS One Off Process MEtrics
+﻿name: WS One Off Process MEtrics
 
 on:
   push:
@@ -28,7 +28,7 @@ jobs:
       WS_SLATES_DIR: data/slates
       WS_PARQUET_DIR: data/parquet
       WS_CURRENT_SEASON_PARQUET: data/current_season.parquet
-      DUCKDB_PATH: data/white_shorts.duckdb     # <� ensure this matches settings.DUCKDB_PATH
+      DUCKDB_PATH: data/white_shorts.duckdb     # <— ensure this matches settings.DUCKDB_PATH
       SPORTS_DATA_BASE: https://api.sportsdata.io
       SPORTS_DATA_API_KEY: ${{ secrets.SPORTS_DATA_API_KEY }}
 
@@ -168,3 +168,21 @@ jobs:
             finally:
                 con.close()
             PY
+
+        # ---------- ✅ COMMIT DUCKDB (so joins work next run) ----------
+      - name: Commit DuckDB state
+        run: |
+          # Consider Git LFS for binary DB if it grows large: git lfs track "data/*.duckdb"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -f "${{ env.DUCKDB_PATH }}" ]; then
+            git add -f "${{ env.DUCKDB_PATH }}"
+            if git diff --cached --quiet; then
+              echo "No DuckDB changes to commit."
+            else
+              git commit -m "Update DuckDB state for ${{ steps.dates.outputs.slate }} [skip ci]"
+              git push origin HEAD:${{ github.ref_name }}
+            fi
+          else
+            echo "DuckDB not found at ${{ env.DUCKDB_PATH }}; skipping commit."
+          fi

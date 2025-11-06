@@ -1,7 +1,8 @@
 name: WS daily pipeline (ASeT)
 
 on:
- 
+  push:
+    branches: [ "working-order" ]
 
   workflow_dispatch:
     inputs:
@@ -128,7 +129,7 @@ jobs:
       - name: Train QRF models (optional)
         #if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_training == 'true' }}
         run: |
-          python -m white_shorts.cli.train_qrf all --version 0.3.0
+          #python -m white_shorts.cli.train_qrf all --version 0.3.0
           # Train all four targets, prefer DuckDB (120d), fall back to API (30d)
           #python -m white_shorts.cli.train_qrf all --version 0.3.1  --api-backfill-days 20
 

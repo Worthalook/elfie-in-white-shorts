@@ -18,7 +18,7 @@ def _sportsdata_token(d: pd.Timestamp) -> str:
     typer.echo(f"API Token DATE: {d}")
     token = f"{d.year}-{mon}-{d.day:02d}"
     typer.echo(f"API Token: {token}.")
-    return   #"2025-Nov-05"
+    return token
 
 def fetch_projections_by_date(date_str: str) -> pd.DataFrame:
     """Authoritative slate from SportsData.io PlayerGameProjectionStatsByDate.

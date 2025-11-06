@@ -25,7 +25,7 @@ def by_date(date: str = typer.Argument(..., help="YYYY-MM-DD or DD/MM/YYYY")):
         return
     out_dir = os.getenv("WS_SLATES_DIR", "data/slates")
     os.makedirs(out_dir, exist_ok=True)
-    dd = pd._parse_date(date)
+    dd = _parse_date(date)
     slate_name = f"slate_{dd.year}-{dd.month}-{dd.day}.parquet"
     typer.echo(f"Saved slate (debug) → {slate_name}")
     out_path = os.path.join(out_dir, slate_name) #f"slate_{dd.year}-{dd.month}-{dd.day:02d}.parquet")

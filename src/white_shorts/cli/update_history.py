@@ -186,7 +186,7 @@ def main(date: str):
         typer.echo(f"update_history CLOSING")
         con.close()
 
-    print(f"Upserted actuals for {iso}: {len(long)} rows")
+    print(f"Upserted actuals for {d}: {len(long)} rows")
 
 if __name__ == "__main__":
     app()

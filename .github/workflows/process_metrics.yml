@@ -1,4 +1,4 @@
-name: WS daily pipeline (ASeT)
+name: WS One Off Process MEtrics
 
 on:
   push:

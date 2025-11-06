@@ -17,6 +17,16 @@ from ..modeling.ets_totals import fit_team_ets, forecast_next
 
 app = typer.Typer(help="Predict using a saved slate parquet (players+games) as the authoritative driver.")
 
+def _parse_date(date_str: str) -> pd.Timestamp:
+    #try:
+    d = pd.to_datetime(date_str, format='%Y-%m-%d')
+    typer.echo(f"PARSE DATE: {d}")
+    # except Exception:
+        
+    if pd.isna(d):
+        raise ValueError(f"Unparseable date: {date_str}")
+    return d.normalize()
+
 def _bundle_from_loaded(d):
     class B: ...
     b = B()
@@ -55,7 +65,7 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
         if c in proj.columns:
             proj[c] = proj[c].astype(str)
     # Ensure date is normalized
-    proj["date"] = pd.to_datetime(proj["date"], errors="coerce").dt.normalize()
+    proj["date"] = _parse_date(proj["date"])
 
     # 1) Build feature history from YTD (+ current season if available)
     df_ytd = load_ytd(ytd_csv)

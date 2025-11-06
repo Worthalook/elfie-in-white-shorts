@@ -211,7 +211,7 @@ def _assemble_training_frame(
 
     # 2) Current: from DuckDB or API
     cur = _load_current_from_duckdb(days=use_duckdb_days)
-
+    print(f"Db Records used for Training: {len(cur)}")
     if cur.empty and api_backfill_days and api_backfill_days > 0:
         # fetch from API for last api_backfill_days (skip today)
         today = pd.Timestamp.utcnow().normalize()

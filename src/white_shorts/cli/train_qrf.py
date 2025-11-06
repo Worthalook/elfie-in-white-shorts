@@ -147,7 +147,8 @@ def _load_current_from_duckdb(days: Optional[int] = 90) -> pd.DataFrame:
               CAST(player_id AS BIGINT) AS player_id,
               COALESCE(name,'')         AS name,
               target,
-              CAST(actual AS DOUBLE)    AS actual
+              CAST(actual AS DOUBLE)    AS actual,
+              15 AS minutes
             FROM fact_actuals
             {where}
         """

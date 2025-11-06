@@ -170,7 +170,7 @@ def main(date: str):
                       COALESCE(name,'')         AS name,
                       target,
                       CAST(actual AS DOUBLE)    AS actual,
-                      0    AS minutes,  
+                      15    AS minutes,  
                     FROM long;""")
 
             typer.echo(f"update_history POST_DB_Execute")

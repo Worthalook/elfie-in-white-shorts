@@ -9,7 +9,8 @@ except Exception:
 
 def _parse_date(date_str: str) -> pd.Timestamp:
     try:
-        d = pd.to_datetime(date_str, format='%yyyy-mm-dd')
+        d = pd.to_datetime(date_str, format='%Y-%m-%d')
+        typer.echo(f"PARSE DATE: {d}")
     except Exception:
         try:
             d = pd.to_datetime(date_str, format='%yyyy-mm-d')

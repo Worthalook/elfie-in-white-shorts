@@ -40,7 +40,7 @@ def _parse_date(date_str: str) -> pd.Timestamp:
         
     if pd.isna(d):
         raise ValueError(f"Unparseable date: {date_str}")
-    return d#.normalize()
+    return d.normalize()
 
 def _fetch_actuals(date_str_iso: str) -> list[dict]:
     print(f"In update_history _fetch_actuals: {date_str_iso}")

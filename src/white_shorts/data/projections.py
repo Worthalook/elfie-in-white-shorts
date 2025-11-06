@@ -15,7 +15,7 @@ def _parse_date(date_str: str) -> pd.Timestamp:
         
     if pd.isna(d):
         raise ValueError(f"Unparseable date: {date_str}")
-    return d#.normalize()
+    return d.normalize()
 
 def _sportsdata_token(d: pd.Timestamp) -> str:
     mon = d.strftime("%b")

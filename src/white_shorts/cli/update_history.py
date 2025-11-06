@@ -104,7 +104,7 @@ def _to_long(df: pd.DataFrame) -> pd.DataFrame:
     long = df.melt(
         id_vars=["date","game_id","team","opponent","player_id","name"],
         value_vars=["points","goals","assists","shots_on_goal"],
-        var_name=["target"],
+        var_name="target",
         value_name="actual"
        
     )

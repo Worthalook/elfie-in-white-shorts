@@ -99,6 +99,7 @@ def _normalize(raw: list[dict]) -> pd.DataFrame:
     return df
 
 def _to_long(df: pd.DataFrame) -> pd.DataFrame:
+    df["date"] = df["date"].apply(_parse_date)
     if df.empty:
         return pd.DataFrame(columns=["date","game_id","team","opponent","player_id","name","target","actual","minutes"])
     long = df.melt(
@@ -111,6 +112,7 @@ def _to_long(df: pd.DataFrame) -> pd.DataFrame:
     # normalize team/opponent for stable joins (upper/trim)
     long["team"] = long["team"].str.upper().str.strip()
     long["opponent"] = long["opponent"].str.upper().str.strip()
+    long["date"] = long["date"].applystr.upper().str.strip()
     return long
 
 @app.command()
@@ -135,7 +137,10 @@ def main(date: str):
 
     con = duckdb.connect(settings.DUCKDB_PATH)
     try:
-       
+        con.execute("""
+                       
+            DROP TABLE fact_actuals;
+        """)
         
         con.execute("""
                        

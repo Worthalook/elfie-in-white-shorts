@@ -37,7 +37,7 @@ _FIELD_MAP = {
     "ShotsOnGoal": "shots_on_goal",
 }
 
-_REQUIRED_BASE = ["date", "game_id", "team", "opponent", "player_id", "name"]
+_REQUIRED_BASE = ["date", "game_id", "team", "opponent", "player_id", "name", "minutes"]
 _REQUIRED_WIDE = list(_REQUIRED_BASE) + list(_TARGETS)
 
 

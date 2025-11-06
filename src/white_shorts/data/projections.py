@@ -1,5 +1,5 @@
 from __future__ import annotations
-import os
+import os, typer
 import pandas as pd
 
 try:
@@ -15,7 +15,9 @@ def _parse_date(date_str: str) -> pd.Timestamp:
 
 def _sportsdata_token(d: pd.Timestamp) -> str:
     mon = d.strftime("%b")
-    return  f"{d.year}-{mon}-{d.day:02d}" #"2025-Nov-05"
+    token = f"{d.year}-{mon}-{d.day:02d}"
+    typer.echo(f"API Token: {token}.")
+    return   #"2025-Nov-05"
 
 def fetch_projections_by_date(date_str: str) -> pd.DataFrame:
     """Authoritative slate from SportsData.io PlayerGameProjectionStatsByDate.

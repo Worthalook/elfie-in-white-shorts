@@ -15,7 +15,7 @@ def _parse_date(date_str: str) -> pd.Timestamp:
 
 def _sportsdata_token(d: pd.Timestamp) -> str:
     mon = d.strftime("%b")
-    return "2025-Nov-05" #f"{d.year}-{mon}-{d.day:02d}"
+    return  f"{d.year}-{mon}-{d.day:02d}" #"2025-Nov-05"
 
 def fetch_projections_by_date(date_str: str) -> pd.DataFrame:
     """Authoritative slate from SportsData.io PlayerGameProjectionStatsByDate.

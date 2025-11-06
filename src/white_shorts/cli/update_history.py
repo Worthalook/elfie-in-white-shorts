@@ -31,7 +31,18 @@ FIELD_MAP = {
 
 REQUIRED = ["date","game_id","team","opponent","player_id","name","points","goals","assists","shots_on_goal"]
 
+def _parse_date(date_str: str) -> pd.Timestamp:
+    #try:
+    d = pd.to_datetime(date_str, format='%Y-%m-%d')
+    typer.echo(f"PARSE DATE: {d}")
+    # except Exception:
+        
+    if pd.isna(d):
+        raise ValueError(f"Unparseable date: {date_str}")
+    return d#.normalize()
+
 def _fetch_actuals(date_str_iso: str) -> list[dict]:
+    print(f"In update_history _fetch_actuals: {date_str_iso}")
     """Fetch ACTUALS for a date; try 'YYYY-Mon-DD' then 'YYYY-MM-DD'."""
     base = os.getenv("SPORTS_DATA_BASE", "https://api.sportsdata.io")
     key  = os.getenv("SPORTS_DATA_API_KEY", "")
@@ -103,7 +114,7 @@ def _to_long(df: pd.DataFrame) -> pd.DataFrame:
 def main(date: str):
     print(f"In update_history MAIN")
     """Upsert actuals for a single date (accepts YYYY-MM-DD or DD/MM/YYYY)."""
-    d = pd.to_datetime(date, dayfirst=True, errors="coerce")
+    d = _parse_date(date)
     typer.echo(f"update_history DATE: {d}")
     if pd.isna(d):
         raise typer.BadParameter(f"Unparseable date: {date}")

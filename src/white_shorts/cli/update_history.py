@@ -100,12 +100,13 @@ def _normalize(raw: list[dict]) -> pd.DataFrame:
 
 def _to_long(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
-        return pd.DataFrame(columns=["date","game_id","team","opponent","player_id","name","target","actual"])
+        return pd.DataFrame(columns=["date","game_id","team","opponent","player_id","name","target","actual","minutes"])
     long = df.melt(
         id_vars=["date","game_id","team","opponent","player_id","name"],
         value_vars=["points","goals","assists","shots_on_goal"],
         var_name="target",
-        value_name="actual",
+        value_name="actual"
+       
     )
     # normalize team/opponent for stable joins (upper/trim)
     long["team"] = long["team"].str.upper().str.strip()
@@ -171,7 +172,7 @@ def main(date: str):
                       COALESCE(name,'')         AS name,
                       target,
                       CAST(actual AS DOUBLE)    AS actual,
-                        
+                      CAST(minutes AS DOUBLE)    AS minutes,  
                     FROM long;""")
 
             typer.echo(f"update_history POST_DB_Execute")

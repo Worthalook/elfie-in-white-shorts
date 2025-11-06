@@ -1,7 +1,18 @@
 from __future__ import annotations
-import os, requests, pandas as pd, duckdb, typer, json
+import os, typer, json
+import pandas as pd
 from ..config import settings
 
+try:
+    import requests
+except Exception:
+    requests = None
+
+try:
+    import duckdb
+except Exception:
+    duckdb = None
+    
 app = typer.Typer(help="Update current-season history (actuals) into DuckDB")
 
 # SportsData.IO → canonical
@@ -90,6 +101,7 @@ def _to_long(df: pd.DataFrame) -> pd.DataFrame:
 
 @app.command()
 def main(date: str):
+    print(f"In update_history MAIN")
     """Upsert actuals for a single date (accepts YYYY-MM-DD or DD/MM/YYYY)."""
     d = pd.to_datetime(date, dayfirst=True, errors="coerce")
     typer.echo(f"update_history DATE: {d}")
@@ -139,3 +151,6 @@ def main(date: str):
         con.close()
 
     print(f"Upserted actuals for {iso}: {len(long)} rows")
+
+if __name__ == "__main__":
+    app()

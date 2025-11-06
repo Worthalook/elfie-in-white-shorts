@@ -86,7 +86,7 @@ def _normalize(raw: list[dict]) -> pd.DataFrame:
             df[c] = None
 
     # types
-    df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.date
+    df["date"] = _parse_date(df["date"])
     for c in ("game_id","player_id"):
         df[c] = pd.to_numeric(df[c], errors="coerce").astype("Int64")
     for c in ("team","opponent","name"):
@@ -99,7 +99,7 @@ def _normalize(raw: list[dict]) -> pd.DataFrame:
     return df
 
 def _to_long(df: pd.DataFrame) -> pd.DataFrame:
-    df["date"] = df["date"].apply(_parse_date)
+    #df["date"] = df["date"].apply(_parse_date)
     if df.empty:
         return pd.DataFrame(columns=["date","game_id","team","opponent","player_id","name","target","actual","minutes"])
     long = df.melt(

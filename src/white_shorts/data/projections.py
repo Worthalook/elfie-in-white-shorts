@@ -10,7 +10,7 @@ except Exception:
 def _parse_date(date_str: str) -> pd.Timestamp:
     #try:
     d = pd.to_datetime(date_str, format='%Y-%m-%d')
-    typer.echo(f"PARSE DATE: {d}")
+    typer.echo(f"PROJ_PARSE DATE: {d}")
     # except Exception:
         
     if pd.isna(d):
@@ -25,6 +25,7 @@ def _sportsdata_token(d: pd.Timestamp) -> str:
     return token
 
 def fetch_projections_by_date(date_str: str) -> pd.DataFrame:
+    typer.echo(f"fetch_projections_by_date: {date_str}")
     """Authoritative slate from SportsData.io PlayerGameProjectionStatsByDate.
     Returns columns: ['date','game_id','team','opponent','player_id','name']
 

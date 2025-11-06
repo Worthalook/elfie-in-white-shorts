@@ -19,6 +19,7 @@ app = typer.Typer(help="Predict using a saved slate parquet (players+games) as t
 
 def _parse_date(date_str: str) -> pd.Timestamp:
     #try:
+    typer.echo(f"UN___PARSE DATE: {date_str}")
     d = pd.to_datetime(date_str, format='%Y-%m-%d')
     typer.echo(f"PARSE DATE: {d}")
     # except Exception:
@@ -65,8 +66,8 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
         if c in proj.columns:
             proj[c] = proj[c].astype(str)
     # Ensure date is normalized
-    proj["date"] = _parse_date(proj["date"])
-
+    proj["date"] = proj["date"].apply(_parse_date)
+    pd.to_datetime
     # 1) Build feature history from YTD (+ current season if available)
     df_ytd = load_ytd(ytd_csv)
     cur_path = current_season_parquet or os.getenv("WS_CURRENT_SEASON_PARQUET", "data/current_season.parquet")
@@ -84,7 +85,7 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
     # Engineer features on history
     df_feat_all = engineer_minimal(hist)
     df_feat_all["player_id"] = df_feat_all["player_id"].astype(str)
-    df_feat_all["date"] = pd.to_datetime(df_feat_all["date"], errors="coerce")
+    df_feat_all["date"] = df_feat_all["date"].apply(_parse_date)
 
     # Take most recent snapshot per (player_id, team) for features
     snap_cols = ["player_id","team"] + [f for f in PLAYER_FEATURES]

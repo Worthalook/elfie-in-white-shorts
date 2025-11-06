@@ -164,7 +164,7 @@ def main(date: str):
                       COALESCE(name,'')         AS name,
                       target,
                       CAST(actual AS DOUBLE)    AS actual
-                    FROM tmp_long;""")
+                    FROM long;""")
 
             typer.echo(f"update_history POST_DB_Execute")
             # ensure physical write

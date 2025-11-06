@@ -35,6 +35,7 @@ _FIELD_MAP = {
     "Goals": "goals",
     "Assists": "assists",
     "ShotsOnGoal": "shots_on_goal",
+    "Minutes" : "minutes"
 }
 
 _REQUIRED_BASE = ["date", "game_id", "team", "opponent", "player_id", "name", "minutes"]

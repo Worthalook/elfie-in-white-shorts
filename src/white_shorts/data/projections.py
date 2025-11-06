@@ -8,7 +8,7 @@ except Exception:
     requests = None
 
 def _parse_date(date_str: str) -> pd.Timestamp:
-    d = pd.to_datetime(date_str, dayfirst=True, errors="coerce")
+    d = pd.to_datetime(date_str, format='%yyyy-mm-d')
     if pd.isna(d):
         raise ValueError(f"Unparseable date: {date_str}")
     return d#.normalize()

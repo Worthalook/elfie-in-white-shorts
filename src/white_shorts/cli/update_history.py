@@ -133,9 +133,9 @@ def main(date: str):
 
     con = duckdb.connect(settings.DUCKDB_PATH)
     try:
-        con.execute("""
-                    DROP TABLE fact_actuals;  
-                    """)
+        #con.execute("""
+        #            DROP TABLE fact_actuals;  
+        #            """)
         
         con.execute("""
                        

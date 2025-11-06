@@ -84,7 +84,7 @@ def _pivot_long_to_wide(long_df: pd.DataFrame) -> pd.DataFrame:
     if long_df is None or long_df.empty:
         return pd.DataFrame(columns=_REQUIRED_WIDE)
 
-    base_cols = ["date", "game_id", "team", "opponent", "player_id", "name"]
+    base_cols = ["date", "game_id", "team", "opponent", "player_id", "name","minutes"]
     if not {"target", "actual"}.issubset(long_df.columns):
         # Already wide (or nothing to do)
         expected = set(base_cols + list(_TARGETS))

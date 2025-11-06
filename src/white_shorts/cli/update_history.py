@@ -38,7 +38,7 @@ def _parse_date(date_str: str) -> pd.Timestamp:
         d = pd.to_datetime(date_str, format='%Y-%m-%dT%H:%M:%S')
         typer.echo(f"UPd--HisT__PARSE DATE: {d}")
     except Exception:
-        d = pd.to_datetime(date_str, format='%Y-%m-%d')
+        d  pd.to_datetime(date_str, format='%Y-%m-%d')
     if pd.isna(d):
         raise ValueError(f"Unparseable date: {date_str}")
     return d.normalize()
@@ -123,10 +123,10 @@ def main(date: str):
     typer.echo(f"update_history DATE: {d}")
     if pd.isna(d):
         raise typer.BadParameter(f"Unparseable date: {date}")
-    iso = d.strftime("%Y-%m-%d")
+    #iso = d.strftime("%Y-%m-%d")
 
-    raw = _fetch_actuals(iso)
-    print(f"Fetched {len(raw)} rows from API for {iso}")
+    raw = _fetch_actuals(d)
+    print(f"Fetched {len(raw)} rows from API for {d}")
     df = _normalize(raw)
     print(f"Normalized rows: {len(df)}")
     if not df.empty:

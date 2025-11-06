@@ -112,7 +112,7 @@ def _to_long(df: pd.DataFrame) -> pd.DataFrame:
     # normalize team/opponent for stable joins (upper/trim)
     long["team"] = long["team"].str.upper().str.strip()
     long["opponent"] = long["opponent"].str.upper().str.strip()
-    long["date"] = long["date"].applystr.upper().str.strip()
+    
     return long
 
 @app.command()

@@ -160,8 +160,8 @@ def main(date: str):
         con.execute("""
             DELETE FROM fact_actuals
             WHERE date = ?
-        """, [pd.Timestamp(iso).date()])
-        typer.echo(f"update_history CLOSING: {pd.Timestamp(iso).date()}")
+        """, [pd.Timestamp(d).date()])
+        typer.echo(f"update_history CLOSING: {pd.Timestamp(d).date()}")
         if not long.empty:
             typer.echo(f"update_history PRE_DB_Execute")
             con.execute("""

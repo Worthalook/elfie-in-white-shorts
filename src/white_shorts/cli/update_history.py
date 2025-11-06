@@ -86,7 +86,7 @@ def _normalize(raw: list[dict]) -> pd.DataFrame:
             df[c] = None
 
     # types
-    df["date"] = _parse_date(df["date"])
+    df["date"] = _parse_date(df["date"].normalize())
     for c in ("game_id","player_id"):
         df[c] = pd.to_numeric(df[c], errors="coerce").astype("Int64")
     for c in ("team","opponent","name"):

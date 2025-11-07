@@ -1,4 +1,4 @@
-name: WS daily pipeline (AsT)
+name: WS daily pipeline (AEsT)
 
 on:
   push:

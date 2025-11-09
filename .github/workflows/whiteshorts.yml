@@ -1,4 +1,4 @@
-name: WS daily pipeline (AEsT)
+name: WS daily pipeline (AET)
 
 on:
   #push:

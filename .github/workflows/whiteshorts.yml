@@ -70,6 +70,7 @@ jobs:
       
       - name: Install broadcast package
         run: |
+          cd whiteshorts_
          # pip install -U pip
          # pip install -e .
       - name: Compute Melbourne dates

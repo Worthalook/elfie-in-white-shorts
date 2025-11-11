@@ -21,11 +21,24 @@ jobs:
         run: |
           pip install -U pip
           pip install -e .
-      - name: Publish predictions
+      - name: Publish predictions to Supabase
+        id: Publish_Results_Predictions
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           SUPABASE_TABLE: predictions
           WS_BACKEND: supabase
         run: |
-          python publish_from_csv.py
+              python - << 'PY'
+              import os, pandas as pd
+              from whiteshorts_broadcast import publish_results, BroadcastConfig
+
+              df = pd.read_csv('data/parquet/predictions_*.csv')  # or the exact path you just wrote
+              cfg = BroadcastConfig(
+              backend='supabase',
+              supabase_url=os.environ['SUPABASE_URL'],
+              supabase_anon_key=os.environ['SUPABASE_SERVICE_KEY'],
+              supabase_table='predictions',
+              upsert_on=['game_date','player_id','target'])
+              publish_results(df, cfg)
+              PY

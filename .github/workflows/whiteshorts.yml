@@ -67,7 +67,11 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install typer duckdb joblib scikit-learn statsmodels pandas pyarrow requests
-
+      
+      - name: Install broadcast package
+        run: |
+          pip install -U pip
+          pip install -e .
       - name: Compute Melbourne dates
         id: dates
         env:
@@ -152,6 +156,27 @@ jobs:
           #fi
 
           python -m white_shorts.cli.predict_from_slate "$SLATE_PATH" --ytd-csv "data/NHL_2023_24.csv"  --out-dir "${{ env.WS_PARQUET_DIR }}"
+
+      #----------write to supabase (for mobile broadcast)
+      
+      - name: Publish predictions to Supabase
+        run:
+          env:
+            SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+            SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+            run: |
+              python -c "
+              import os, pandas as pd
+              from whiteshorts_broadcast import publish_results, BroadcastConfig
+
+              df = pd.read_csv('data/parquet/predictions_*.csv')  # or the exact path you just wrote
+              cfg = BroadcastConfig(
+              backend='supabase',
+              supabase_url=os.environ['SUPABASE_URL'],
+              supabase_anon_key=os.environ['SUPABASE_SERVICE_KEY'],
+              supabase_table='predictions',
+              upsert_on=['game_date','player_id','target']
+              publish_results(df, cfg)"
 
       # ---------- COLLECT & UPLOAD PRED ARTIFACT ----------
       - name: List prediction CSVs

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "whiteshorts-broadcast"
+version = "0.1.0"
+description = "Process a predictions DataFrame and broadcast to Supabase / Webhook / File."
+authors = [{ name = "WhiteShorts", email = "devnull@example.com" }]
+requires-python = ">=3.9"
+dependencies = [
+  "pandas>=2.0.0",
+  "requests>=2.31.0"
+]
+
+[project.scripts]
+whiteshorts-broadcast = "whiteshorts_broadcast.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -70,8 +70,8 @@ jobs:
       
       - name: Install broadcast package
         run: |
-          pip install -U pip
-          pip install -e .
+         # pip install -U pip
+         # pip install -e .
       - name: Compute Melbourne dates
         id: dates
         env:
@@ -175,7 +175,7 @@ jobs:
               supabase_url=os.environ['SUPABASE_URL'],
               supabase_anon_key=os.environ['SUPABASE_SERVICE_KEY'],
               supabase_table='predictions',
-              upsert_on=['game_date','player_id','target']
+              upsert_on=['game_date','player_id','target'])
               publish_results(df, cfg)
               PY
 

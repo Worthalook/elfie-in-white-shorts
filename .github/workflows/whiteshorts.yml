@@ -160,11 +160,10 @@ jobs:
       #----------write to supabase (for mobile broadcast)
       
       - name: Publish predictions to Supabase
-        run:
-          env:
+        env:
             SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
             SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-            run: |
+        run: |
               python -c "
               import os, pandas as pd
               from whiteshorts_broadcast import publish_results, BroadcastConfig

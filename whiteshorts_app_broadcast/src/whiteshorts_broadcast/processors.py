@@ -74,6 +74,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = normalize_columns(df2, cfg.rename_map)
     df2 = coerce_types(df2)
     df2 = normalize_dates(df2)
+    df2 = clip_columns(df2)
     df2 = nullify_non_finite(df2)     # <- critical for JSON
     df2 = drop_missing_required(df2, cfg.required_cols)
     for fn in cfg.processors:

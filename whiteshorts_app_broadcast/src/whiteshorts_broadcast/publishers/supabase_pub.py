@@ -1,5 +1,5 @@
-import requests
-import json
+﻿# publishers/supabase_pub.py
+import requests, json
 from typing import List, Dict
 
 class SupabasePublisher:
@@ -14,9 +14,17 @@ class SupabasePublisher:
             "apikey": self.cfg.supabase_anon_key,
             "Authorization": f"Bearer {self.cfg.supabase_anon_key}",
             "Content-Type": "application/json",
-            "Prefer": "resolution=merge-duplicates"
+            "Prefer": "resolution=merge-duplicates,return=representation"
         }
         keys = ",".join(self.cfg.upsert_on) if self.cfg.upsert_on else ""
         q = f"?on_conflict={keys}" if keys else ""
-        resp = requests.post(url + q, headers=headers, data=json.dumps(rows))
-        resp.raise_for_status()
+
+        # 🔒 Fail fast if NaN/Inf present
+        payload = json.dumps(rows, allow_nan=False)
+
+        resp = requests.post(url + q, headers=headers, data=payload)
+        # Optional: print server error details for debugging
+        try:
+            resp.raise_for_status()
+        except requests.HTTPError as e:
+            raise RuntimeError(f"Supabase error {resp.status_code}: {resp.text}") from e

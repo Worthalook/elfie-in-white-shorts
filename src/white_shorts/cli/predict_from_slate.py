@@ -15,15 +15,10 @@ from ..modeling.trainers_qrf import train_player_qrf, qrf_predict_with_quantiles
 from ..modeling.io_qrf import save_qrf, load_latest
 from ..modeling.ets_totals import fit_team_ets, forecast_next
 
-app = typer.Typer(help="Predict using a saved slate parquet (players+games) as the authoritative driver.")
+app = typer.Typer(help="Predict ONLY for players present in the given slate (single date).")
 
 def _parse_date(date_str: str) -> pd.Timestamp:
-    #try:
-    #typer.echo(f"UN___PARSE DATE: {date_str}")
-    d = pd.to_datetime(date_str, format='%Y-%m-%d')
-    #typer.echo(f"PARSE DATE: {d}")
-    # except Exception:
-        
+    d = pd.to_datetime(date_str, format="%Y-%m-%d", errors="coerce")
     if pd.isna(d):
         raise ValueError(f"Unparseable date: {date_str}")
     return d.normalize()
@@ -44,12 +39,19 @@ def _load_or_train(prefix: str, df_feat: pd.DataFrame, features: list[str], targ
     return b
 
 @app.command()
-def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/slate_<date>.parquet"),
-          ytd_csv: str = typer.Option("data/NHL_YTD.csv", help="Last season CSV"),
-          current_season_parquet: str = typer.Option(None, help="Current-season parquet (defaults to WS_CURRENT_SEASON_PARQUET)"),
-          version: str = typer.Option("0.3.0", help="Model version tag"),
-          out_dir: str = typer.Option("data/parquet", help="Output directory for CSV artifact")):
-    """Run player QRF predictions and team totals ETS using a saved slate as the driver."""
+def slate(
+    slate_parquet: str = typer.Argument(..., help="Path to data/slates/slate_<date>.parquet"),
+    ytd_csv: str = typer.Option("data/NHL_YTD.csv", help="Last season CSV"),
+    current_season_parquet: str = typer.Option(None, help="Current-season parquet (defaults to WS_CURRENT_SEASON_PARQUET)"),
+    version: str = typer.Option("0.3.0", help="Model version tag"),
+    out_dir: str = typer.Option("data/parquet", help="Output directory for CSV artifact"),
+    date: str = typer.Option(None, help="Force a specific slate date (YYYY-MM-DD) if the parquet contains multiple dates"),
+):
+    """
+    Run QRF player predictions and ETS team totals for the given slate.
+    HARD RULE: predictions are produced ONLY for players contained in the slate rows for the resolved date.
+    """
+
     init_db()
 
     # 0) Load slate (authoritative identifiers: date, game_id, team, opponent, player_id, name)
@@ -58,22 +60,57 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
         typer.echo("Slate is empty; nothing to predict.")
         return
 
-    # Coerce types
+    # Normalize/clean slate columns
+    if "player_id" not in proj.columns:
+        raise ValueError("Slate must contain player_id")
+    if "team" not in proj.columns or "opponent" not in proj.columns:
+        raise ValueError("Slate must contain team and opponent")
+    if "date" not in proj.columns:
+        raise ValueError("Slate must contain date")
+
     proj["player_id"] = proj["player_id"].astype(str)
     if "game_id" in proj.columns:
         proj["game_id"] = pd.to_numeric(proj["game_id"], errors="coerce")
-    for c in ["team","opponent"]:
+    for c in ["team", "opponent", "name"]:
         if c in proj.columns:
             proj[c] = proj[c].astype(str)
-    # Ensure date is normalized
+
+    # Ensure date is normalized and resolve a SINGLE working date
     proj["date"] = proj["date"].apply(_parse_date)
-    pd.to_datetime
+
+    if date is not None:
+        target_date = _parse_date(date)
+        proj = proj.loc[proj["date"] == target_date]
+        if proj.empty:
+            raise ValueError(f"Slate has no rows for specified date {target_date.date()}")
+    else:
+        # If multiple dates exist, use the most common; warn if >1 unique
+        dates = proj["date"].dropna().unique()
+        if len(dates) > 1:
+            # choose the mode (largest group) to avoid mixed-day runs
+            counts = proj["date"].value_counts()
+            target_date = counts.idxmax()
+            typer.echo(f"Slate contains multiple dates; using majority date: {target_date.date()}")
+            proj = proj.loc[proj["date"] == target_date]
+        else:
+            target_date = dates[0]
+
+    # Keep only rows with clear identifiers for that date
+    proj = (proj
+            .dropna(subset=["player_id", "team", "opponent"])
+            .drop_duplicates(subset=["player_id", "team", "opponent", "date"])
+            .reset_index(drop=True))
+
+    if proj.empty:
+        typer.echo("After filtering to resolved date and identifiers, the slate is empty; nothing to predict.")
+        return
+
     # 1) Build feature history from YTD (+ current season if available)
     df_ytd = load_ytd(ytd_csv)
     cur_path = current_season_parquet or os.getenv("WS_CURRENT_SEASON_PARQUET", "data/current_season.parquet")
     df_cur = load_current_season(cur_path)
+
     if df_cur is not None and not df_cur.empty:
-        # union columns
         cols = sorted(set(df_ytd.columns).union(df_cur.columns))
         for c in cols:
             if c not in df_ytd.columns: df_ytd[c] = pd.NA
@@ -88,16 +125,19 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
     df_feat_all["date"] = df_feat_all["date"].apply(_parse_date)
 
     # Take most recent snapshot per (player_id, team) for features
-    snap_cols = ["player_id","team"] + [f for f in PLAYER_FEATURES]
-    for c in ["team"]:
-        if c not in df_feat_all.columns: df_feat_all[c] = pd.NA
+    snap_cols = ["player_id", "team"] + [f for f in PLAYER_FEATURES]
+    if "team" not in df_feat_all.columns:
+        df_feat_all["team"] = pd.NA
     df_feat_all = df_feat_all.sort_values("date")
-    last_feat = (df_feat_all
-                 .groupby(["player_id","team"], as_index=False)
-                 .tail(1)[snap_cols])
+    last_feat = (
+        df_feat_all
+        .groupby(["player_id", "team"], as_index=False)
+        .tail(1)[snap_cols]
+    )
 
-    # Merge features onto slate; keep slate identifiers
-    df_feat = proj.merge(last_feat, on=["player_id","team"], how="left")
+    # Merge features ONTO THE SLATE (inner semantics: keep only slate players)
+    # Use left join (slate driven) but we will fill features later; output will remain strictly slate players.
+    df_feat = proj.merge(last_feat, on=["player_id", "team"], how="left")
 
     # Fill any missing feature columns with zeros (stub-friendly)
     for f in PLAYER_FEATURES:
@@ -107,14 +147,13 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
 
     run_id = os.getenv("WS_RUN_ID", str(abs(hash(datetime.utcnow().isoformat()))))
 
-    # 2) Player predictions via QRF
+    # 2) Player predictions via QRF — strictly for slate players (df_feat rows)
     def _player_block(target: str):
         prefix = f"rf_qrf_{target}"
-        # Optionally, we could train with sample_weight using training_merge, but keep simple here.
         bundle = _load_or_train(prefix, df_feat_all, PLAYER_FEATURES, target=target)
         X = df_feat[bundle.features].fillna(0)
         mu, q10, q90 = qrf_predict_with_quantiles(bundle, X, 0.10, 0.90)
-        out = df_feat[["date","game_id","team","opponent","player_id","name"]].copy()
+        out = df_feat[["date", "game_id", "team", "opponent", "player_id", "name"]].copy()
         out["target"] = target
         out["model_name"] = bundle.model_name
         out["model_version"] = bundle.model_version
@@ -132,26 +171,25 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
     preds_assists = _player_block("assists")
     preds_shots   = _player_block("shots_on_goal")
 
-    # 3) Team totals via ETS, but driven by slate games (one total per game)
-    # Fit ETS per team from historical team_goals
-    hist_keys = ["date","game_id","team","opponent","home_or_away"]
-    team_hist = (df_feat_all.groupby(hist_keys, as_index=False)["points"]
-                 .sum().rename(columns={"points":"team_goals"}))
-    team_hist = team_hist.sort_values("date")
+    # 3) Team totals via ETS, but driven by THIS DATE'S slate games only
+    hist_keys = ["date", "game_id", "team", "opponent", "home_or_away"]
+    team_hist = (
+        df_feat_all.groupby(hist_keys, as_index=False)["points"]
+        .sum().rename(columns={"points": "team_goals"})
+        .sort_values("date")
+    )
 
     ets_models = {}
     for team, grp in team_hist.groupby("team"):
-        s = grp[["date","team_goals"]].dropna().sort_values("date")
+        s = grp[["date", "team_goals"]].dropna().sort_values("date")
         if len(s) >= 5:
             ets_models[team] = fit_team_ets(s, team)
 
-    # Derive unique games from the slate
-    games = proj[["date","game_id","team","opponent"]].dropna().drop_duplicates()
-    # Create a per-game total by summing team λs
+    # Unique games from the filtered slate (i.e., only today's slate)
+    games = proj[["date", "game_id", "team", "opponent"]].dropna().drop_duplicates()
     total_rows = []
 
     for gid, ggrp in games.groupby("game_id"):
-        # pick a canonical row (first) for identifiers
         r0 = ggrp.iloc[0]
         pred_date = r0["date"].strftime("%Y-%m-%d")
         team_a = str(r0["team"]); team_b = str(r0["opponent"])
@@ -169,7 +207,7 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
             "model_name": "ets_sum_team_goals",
             "model_version": version,
             "distribution": "ets_sum",
-            "lambda_or_mu": float(lam_total) if lam_total==lam_total else 0.0,
+            "lambda_or_mu": float(lam_total) if lam_total == lam_total else 0.0,
             "q10": 0.0,
             "q90": 0.0,
             "p_ge_k_json": "",
@@ -178,15 +216,21 @@ def slate(slate_parquet: str = typer.Argument(..., help="Path to data/slates/sla
         })
     preds_totals = pd.DataFrame(total_rows)
 
-    all_preds = pd.concat([preds_points, preds_goals, preds_assists, preds_shots, preds_totals], ignore_index=True)
+    all_preds = pd.concat(
+        [preds_points, preds_goals, preds_assists, preds_shots, preds_totals],
+        ignore_index=True
+    )
 
-    # Align to expected columns for persistence
+    # Align to expected columns for persistence and JSON cleanliness
     for c in PRED_COLS:
         if c not in all_preds.columns:
             all_preds[c] = pd.NA
 
+    # Nullify NaN/±Inf so downstream JSON (and CSV) are clean
+    all_preds = all_preds.replace([np.inf, -np.inf], np.nan)
+
     os.makedirs(out_dir, exist_ok=True)
-    out_csv = os.path.join(out_dir, f"predictions_{pred_date}_{run_id}.csv")
+    out_csv = os.path.join(out_dir, f"predictions_{target_date.date()}_{run_id}.csv")
     all_preds.to_csv(out_csv, index=False)
 
     append("fact_predictions", all_preds)

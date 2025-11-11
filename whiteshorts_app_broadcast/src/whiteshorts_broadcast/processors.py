@@ -58,6 +58,17 @@ def nullify_non_finite(df: pd.DataFrame) -> pd.DataFrame:
 def drop_missing_required(df: pd.DataFrame, required_cols: List[str]) -> pd.DataFrame:
     return df.dropna(subset=required_cols) if required_cols else df
 
+# add to processors.py, called inside default_pipeline before nullify_non_finite
+def clip_columns(df: pd.DataFrame, clip_map: dict[str, tuple[float,float]]) -> pd.DataFrame:
+    # clip_map example: {"pred_mean": (0, 10), "pred_q10": (0, 10), "pred_q90": (0, 10)}
+    for col, (lo, hi) in (clip_map or {}).items():
+        if col in df:
+            try:
+                df[col] = pd.to_numeric(df[col], errors="coerce").clip(lower=lo, upper=hi)
+            except Exception:
+                pass
+    return df
+    
 def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = df.copy()
     df2 = normalize_columns(df2, cfg.rename_map)

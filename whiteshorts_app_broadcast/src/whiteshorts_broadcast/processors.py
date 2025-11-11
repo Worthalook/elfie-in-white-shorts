@@ -1,7 +1,8 @@
 # processors.py
+import re
+import math
 import numpy as np
 import pandas as pd
-import re
 from typing import Dict, List
 
 def _snake(s: str) -> str:
@@ -13,25 +14,45 @@ def normalize_columns(df: pd.DataFrame, rename_map: Dict[str,str]) -> pd.DataFra
     return df
 
 def coerce_types(df: pd.DataFrame) -> pd.DataFrame:
+    """Light coercion: try numeric where sensible; keep strings otherwise."""
     for c in df.columns:
+        # Try numeric; only keep if we didn’t blow away most values
         try:
-            converted = pd.to_numeric(df[c])
-            # keep only if we didn't nuke most of the column
+            converted = pd.to_numeric(df[c], errors="coerce")
             if converted.notna().mean() >= 0.8:
                 df[c] = converted
         except Exception:
             pass
     return df
 
-def _nullify_non_finite(df: pd.DataFrame) -> pd.DataFrame:
-    # Make a copy to avoid chained assignment surprises
+def normalize_dates(df: pd.DataFrame) -> pd.DataFrame:
+    """Ensure date-like columns (e.g., game_date) are ISO yyyy-mm-dd strings."""
+    for col in df.columns:
+        if "date" in col:
+            try:
+                ser = pd.to_datetime(df[col], errors="coerce", utc=False).dt.date
+                df[col] = ser.astype(str)  # 'YYYY-MM-DD' or 'NaT'→'NaT'
+                df.loc[df[col].isin(["NaT", "nat", "None"]), col] = None
+            except Exception:
+                pass
+    return df
+
+def nullify_non_finite(df: pd.DataFrame) -> pd.DataFrame:
+    """Replace NaN/±Inf with None so JSON is compliant."""
     df = df.copy()
+    # First, uniform missing values
+    df = df.where(pd.notna(df), None)
+
     for c in df.columns:
-        # Replace pandas NA with None
-        df[c] = df[c].where(pd.notna(df[c]), None)
-        # For numeric columns, also replace inf/-inf with None
-        if pd.api.types.is_numeric_dtype(df[c]):
-            df.loc[np.isinf(df[c].astype(float)), c] = None
+        # If column is numeric or mostly numeric, check for inf
+        try:
+            ser = pd.to_numeric(df[c], errors="coerce")
+            mask_inf = ser.map(lambda x: (isinstance(x, float) and (math.isinf(x))), na_action='ignore')
+            if mask_inf.any():
+                df.loc[mask_inf, c] = None
+        except Exception:
+            # If not numeric, nothing to do
+            pass
     return df
 
 def drop_missing_required(df: pd.DataFrame, required_cols: List[str]) -> pd.DataFrame:
@@ -41,7 +62,8 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = df.copy()
     df2 = normalize_columns(df2, cfg.rename_map)
     df2 = coerce_types(df2)
-    df2 = _nullify_non_finite(df2)     # <-- ADD THIS LINE
+    df2 = normalize_dates(df2)
+    df2 = nullify_non_finite(df2)     # <- critical for JSON
     df2 = drop_missing_required(df2, cfg.required_cols)
     for fn in cfg.processors:
         df2 = fn(df2)

@@ -6,7 +6,7 @@ class BroadcastConfig:
     backend: str = "supabase"  # supabase | webhook | file
     # supabase
     supabase_url: str = "https://gbxxrfrmzgltdyfunwaa.supabase.co"
-    supabase_anon_key: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdieHhyZnJtemdsdGR5ZnVud2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4NjAxOTgsImV4cCI6MjA3ODQzNjE5OH0.X_CnVXWArB8tPO1Cq2I18dpeZ7de4dRZliIKVzmGFok"
+    supabase_anon_key: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdieHhyZnJtemdsdGR5ZnVud2FhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Mjg2MDE5OCwiZXhwIjoyMDc4NDM2MTk4fQ.08GTX8aw9nqNK4Am2YDeAca3Et3zumE0tKHP_uv9Yo0"
     supabase_table: str = "predictions"
     upsert_on: List[str] = field(default_factory=lambda: ["game_date","player_id","target"])
     # webhook

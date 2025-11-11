@@ -160,6 +160,7 @@ jobs:
       #----------write to supabase (for mobile broadcast)
       
       - name: Publish predictions to Supabase
+        id: 'Publish Results-Predictions'  
         env:
             SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
             SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

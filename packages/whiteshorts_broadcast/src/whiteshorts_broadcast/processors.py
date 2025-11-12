@@ -60,6 +60,46 @@ def nullify_non_finite(df: pd.DataFrame) -> pd.DataFrame:
 def drop_missing_required(df: pd.DataFrame, required_cols: List[str]) -> pd.DataFrame:
     return df.dropna(subset=required_cols) if required_cols else df
 
+def filter_columns_by_range(df: pd.DataFrame, range_map: dict[str, tuple[float, float]]) -> pd.DataFrame:
+    """
+    Remove rows where any specified column value falls outside its (lo, hi) range.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame.
+    range_map : dict[str, tuple[float, float]]
+        Example: {"pred_mean": (0, 10), "pred_q10": (0, 10), "pred_q90": (0, 10)}
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered DataFrame containing only rows that fall within all provided ranges.
+    """
+    import pandas as pd
+    import numpy as np
+
+    if not range_map:
+        return df
+
+    mask = pd.Series(True, index=df.index)
+    for col, (lo, hi) in range_map.items():
+        if col not in df.columns:
+            continue
+        try:
+            vals = pd.to_numeric(df[col], errors="coerce")
+            # keep only rows within [lo, hi]
+            within = vals.ge(lo) & vals.le(hi)
+            # NaN values are treated as out-of-range → False
+            within = within & vals.notna()
+            mask &= within
+        except Exception as e:
+            print(f"[filter_columns_by_range] Skipping {col}: {e}")
+
+    filtered = df.loc[mask].reset_index(drop=True)
+    return filtered
+
+
 # add to processors.py, called inside default_pipeline before nullify_non_finite
 def clip_columns(df: pd.DataFrame, clip_map: dict[str, tuple[float,float]]) -> pd.DataFrame:
     # clip_map example: {"pred_mean": (0, 10), "pred_q10": (0, 10), "pred_q90": (0, 10)}
@@ -206,7 +246,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = normalize_columns(df2, cfg.rename_map)
     df2 = coerce_types(df2)
     df2 = normalize_dates(df2)
-    df2 = clip_columns(df2, {"lambda_or_mu": (0.5, 10), "q10": (0, 10), "q90": (0.5, 10)})
+    df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.5, None), "q10": (0.01, None), "q90": (0.5, None)})
     df2 = apply_elfies_topk_pipeline(
         df2,
         pred_col=getattr(cfg, "pred_col", "lambda_or_mu"),
@@ -217,6 +257,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         top_k=getattr(cfg, "elfies_top_k", 4),
         keep_ties=getattr(cfg, "elfies_keep_ties", False),
     )
+    df2 = filter_columns_by_range(df2, {"elfies_number": (None, 2), "q10": (0.01, None), "q90": (0.5, None)})
     df2 = nullify_non_finite(df2)     # <- critical for JSON
     df2 = drop_missing_required(df2, cfg.required_cols)
     

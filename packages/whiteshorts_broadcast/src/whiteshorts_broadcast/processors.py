@@ -244,7 +244,7 @@ def apply_elfies_topk_pipeline(
 def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = df.copy()
     df2 = normalize_columns(df2, cfg.rename_map)
-    df2 = coerce_types(df2)
+    #df2 = coerce_types(df2)
     df2 = normalize_dates(df2)
     df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.5, 20), "q10": (0.01, 20), "q90": (0.5, 20)})
     df2  =apply_elfies_topk_pipeline(

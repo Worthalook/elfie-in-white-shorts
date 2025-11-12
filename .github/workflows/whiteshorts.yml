@@ -161,25 +161,25 @@ jobs:
 
       #----------write to supabase (for mobile broadcast)
  
-      # - name: Publish predictions to Supabase
-      #  id: Publish_Results_Predictions
-      #  env:
-      #      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      #    SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        #run: |
-          #   python - << 'PY'
-          #    import os, pandas as pd
-          #              from whiteshorts_broadcast import publish_results, BroadcastConfig
+      - name: Publish predictions to Supabase
+        id: Publish_Results_Predictions
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+             python - << 'PY'
+              import os, pandas as pd
+                        from whiteshorts_broadcast import publish_results, BroadcastConfig
 
-          #    df = pd.read_csv('data/parquet/predictions_*.csv')  # or the exact path you just wrote
-          #    cfg = BroadcastConfig(
-          #    backend='supabase',
-          #    supabase_url=os.environ['SUPABASE_URL'],
-          #    supabase_anon_key=os.environ['SUPABASE_SERVICE_KEY'],
-          #    supabase_table='predictions',
-          #    upsert_on=['date','player_id','target'])
-          #   publish_results(df, cfg)
-          #    PY
+              df = pd.read_csv('data/parquet/predictions_*.csv')  # or the exact path you just wrote
+              cfg = BroadcastConfig(
+              backend='supabase',
+              supabase_url=os.environ['SUPABASE_URL'],
+              supabase_anon_key=os.environ['SUPABASE_SERVICE_KEY'],
+              supabase_table='predictions',
+              upsert_on=['date','player_id','target'])
+              publish_results(df, cfg)
+              PY
       # ---------- COLLECT & UPLOAD PRED ARTIFACT ----------
       - name: List prediction CSVs
         run: ls -lh "${{ env.WS_PARQUET_DIR }}" || true

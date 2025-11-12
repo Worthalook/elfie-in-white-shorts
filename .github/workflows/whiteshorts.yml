@@ -78,7 +78,7 @@ jobs:
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: whiteshorts-broadcast-wheel
+          name: whiteshorts_broadcast-wheel
           path: packages/whiteshorts_broadcast/dist/*.whl
 
       - name: Download wheel artifact

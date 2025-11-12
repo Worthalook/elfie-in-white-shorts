@@ -16,8 +16,8 @@ create table if not exists public.predictions (
   created_at timestamptz default now()
 );
 
-create unique index if not exists predictions_uniq on public.predictions (game_date, player_id, target);
-create index if not exists predictions_date_idx on public.predictions (game_date);
+create unique index if not exists predictions_uniq on public.predictions (date, player_id, target);
+create index if not exists predictions_date_idx on public.predictions (date);
 create index if not exists predictions_player_idx on public.predictions (player_id);
 create index if not exists predictions_target_idx on public.predictions (target);
 

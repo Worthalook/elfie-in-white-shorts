@@ -70,15 +70,144 @@ def clip_columns(df: pd.DataFrame, clip_map: dict[str, tuple[float,float]]) -> p
             except Exception:
                 pass
     return df
-    
+ 
+def add_elfies_number(
+    df: pd.DataFrame,
+    *,
+    pred_col: str = "pred_mean",
+    q10_col: str = "pred_q10",
+    q90_col: str = "pred_q90",
+    out_col: str = "elfies_number",
+) -> pd.DataFrame:
+    """
+    Compute elfies_number = prediction / (1 + (q90 - q10))
+    Safe against non-numeric, NaN, and division by zero; returns a copy.
+    """
+    df2 = df.copy()
+
+    # Coerce to numeric (non-coercible → NaN)
+    p = pd.to_numeric(df2.get(pred_col), errors="coerce")
+    q10 = pd.to_numeric(df2.get(q10_col), errors="coerce")
+    q90 = pd.to_numeric(df2.get(q90_col), errors="coerce")
+
+    # denominator = 1 + (q90 - q10); guard against <= 0 or non-finite
+    denom = 1.0 + (q90 - q10)
+    denom = denom.replace([np.inf, -np.inf], np.nan)
+
+    # valid where: p is finite AND denom is finite & > 0
+    valid = p.notna() & denom.notna() & (denom > 0)
+
+    elfies = pd.Series(np.nan, index=df2.index, dtype="float64")
+    elfies[valid] = (p[valid] / denom[valid]).astype("float64")
+
+    df2[out_col] = elfies.replace([np.inf, -np.inf], np.nan)
+    return df2
+
+
+def top_k_per_team_by_score(
+    df: pd.DataFrame,
+    *,
+    team_col: str = "team",
+    score_col: str = "elfies_number",
+    top_k: int = 4,
+    # If True, include all rows tied at the boundary (may exceed top_k)
+    keep_ties: bool = False,
+) -> pd.DataFrame:
+    """
+    Sort by score desc and keep top_k rows per team. Returns a new DataFrame
+    sorted by (team, score desc, then original order as tiebreaker).
+    """
+    if team_col not in df.columns or score_col not in df.columns:
+        # Nothing to do if columns are missing
+        return df.copy()
+
+    work = df.copy()
+    # Make sure score is numeric
+    work[score_col] = pd.to_numeric(work[score_col], errors="coerce")
+    # Stable sort: highest score first; keep original index for tie-breaks
+    work["_orig_idx"] = np.arange(len(work))
+    work = work.sort_values([team_col, score_col, "_orig_idx"],
+                            ascending=[True, False, True],
+                            kind="mergesort")
+
+    if not keep_ties:
+        out = (
+            work.groupby(team_col, group_keys=False)
+                .head(max(int(top_k), 0))
+                .drop(columns=["_orig_idx"])
+        )
+        return out
+
+    # keep_ties=True → keep everyone whose score equals the kth score
+    def _take_with_ties(g: pd.DataFrame) -> pd.DataFrame:
+        if top_k <= 0 or g.empty:
+            return g.iloc[0:0]
+        # g is already sorted desc by score
+        boundary = g.iloc[min(len(g), top_k) - 1][score_col]
+        mask = g[score_col] >= boundary
+        return g.loc[mask]
+
+    out = (
+        work.groupby(team_col, group_keys=False)
+            .apply(_take_with_ties)
+            .drop(columns=["_orig_idx"])
+            .reset_index(drop=True)
+    )
+    return out
+
+
+def apply_elfies_topk_pipeline(
+    df: pd.DataFrame,
+    *,
+    pred_col: str = "pred_mean",
+    q10_col: str = "pred_q10",
+    q90_col: str = "pred_q90",
+    team_col: str = "team",
+    out_col: str = "elfies_number",
+    top_k: int = 4,
+    keep_ties: bool = False,
+) -> pd.DataFrame:
+    """
+    Convenience wrapper that:
+      1) computes elfies_number
+      2) sorts by it (desc within team) and takes top_k per team
+    Intended to be called AFTER clip_columns().
+    """
+    df2 = add_elfies_number(
+        df,
+        pred_col=pred_col,
+        q10_col=q10_col,
+        q90_col=q90_col,
+        out_col=out_col,
+    )
+    df3 = top_k_per_team_by_score(
+        df2,
+        team_col=team_col,
+        score_col=out_col,
+        top_k=top_k,
+        keep_ties=keep_ties,
+    )
+    return df3
+
 def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = df.copy()
     df2 = normalize_columns(df2, cfg.rename_map)
     df2 = coerce_types(df2)
     df2 = normalize_dates(df2)
     df2 = clip_columns(df2, {"pred_mean": (0.5, 10), "pred_q10": (0, 10), "pred_q90": (0.5, 10)})
+    df2 = apply_elfies_topk_pipeline(
+        df2,
+        pred_col=getattr(cfg, "pred_col", "pred_mean"),
+        q10_col=getattr(cfg, "q10_col", "pred_q10"),
+        q90_col=getattr(cfg, "q90_col", "pred_q90"),
+        team_col=getattr(cfg, "team_col", "team"),
+        out_col=getattr(cfg, "elfies_out_col", "elfies_number"),
+        top_k=getattr(cfg, "elfies_top_k", 4),
+        keep_ties=getattr(cfg, "elfies_keep_ties", False),
+    )
     df2 = nullify_non_finite(df2)     # <- critical for JSON
     df2 = drop_missing_required(df2, cfg.required_cols)
+    
     for fn in cfg.processors:
         df2 = fn(df2)
     return df2.to_dict(orient="records")

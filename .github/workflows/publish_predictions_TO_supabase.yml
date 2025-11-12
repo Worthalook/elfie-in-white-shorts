@@ -37,7 +37,8 @@ jobs:
         run: |
               python - << 'PY'
               import os, pandas as pd
-              from whiteshorts_broadcast import publish_results, BroadcastConfig
+              from whiteshorts_broadcast import publish_results, BroadcastConfig, find_latest_csv
+              #csv_path = find_latest_csv("data/parquet/predictions_*.csv") 
 
               df = pd.read_csv('data/parquet/predictions_2025-11-11_462337372233715334.csv')  # or the exact path you just wrote
               cfg = BroadcastConfig(

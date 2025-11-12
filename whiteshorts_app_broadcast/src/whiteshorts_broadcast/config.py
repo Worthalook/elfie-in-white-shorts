@@ -8,7 +8,7 @@ class BroadcastConfig:
     supabase_url: str = "https://gbxxrfrmzgltdyfunwaa.supabase.co"
     supabase_anon_key: str = ""
     supabase_table: str = "predictions"
-    upsert_on: List[str] = field(default_factory=lambda: ["game_date","player_id","target"])
+    upsert_on: List[str] = field(default_factory=lambda: ["date","player_id","target"])
     # webhook
     webhook_url: str = ""
     headers: Dict[str, str] = field(default_factory=dict)

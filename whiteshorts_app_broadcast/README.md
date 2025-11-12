@@ -57,7 +57,7 @@ create table if not exists public.predictions (
   created_at timestamptz default now()
 );
 
-create unique index if not exists predictions_uniq on public.predictions (game_date, player_id, target);
+create unique index if not exists predictions_uniq on public.predictions (date, player_id, target);
 alter table public.predictions enable row level security;
 create policy "public read" on public.predictions for select to anon using (true);
 ```

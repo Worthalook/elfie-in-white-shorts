@@ -177,7 +177,7 @@ jobs:
           #    supabase_url=os.environ['SUPABASE_URL'],
           #    supabase_anon_key=os.environ['SUPABASE_SERVICE_KEY'],
           #    supabase_table='predictions',
-          #    upsert_on=['game_date','player_id','target'])
+          #    upsert_on=['date','player_id','target'])
           #   publish_results(df, cfg)
           #    PY
       # ---------- COLLECT & UPLOAD PRED ARTIFACT ----------

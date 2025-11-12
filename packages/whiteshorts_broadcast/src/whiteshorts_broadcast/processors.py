@@ -37,7 +37,7 @@ def normalize_dates(df: pd.DataFrame) -> pd.DataFrame:
                 df.loc[df[col].isin(["NaT", "nat", "None"]), col] = None
             except Exception:
                 pass
-    return df
+    return df   
 
 def nullify_non_finite(df: pd.DataFrame) -> pd.DataFrame:
     """Replace NaN/±Inf with None so JSON is compliant."""
@@ -48,10 +48,13 @@ def nullify_non_finite(df: pd.DataFrame) -> pd.DataFrame:
     for c in df.columns:
         # If column is numeric or mostly numeric, check for inf
         try:
-            ser = pd.to_numeric(df[c], errors="coerce")
-            mask_inf = ser.map(lambda x: (isinstance(x, float) and (math.isinf(x))), na_action='ignore')
-            if mask_inf.any():
-                df.loc[mask_inf, c] = None
+            if c != "player_id":
+                ser = pd.to_numeric(df[c], errors="coerce")
+                mask_inf = ser.map(lambda x: (isinstance(x, float) and (math.isinf(x))), na_action='ignore')
+                if mask_inf.any():
+                    df.loc[mask_inf, c] = None
+          
+                    
         except Exception:
             # If not numeric, nothing to do
             pass

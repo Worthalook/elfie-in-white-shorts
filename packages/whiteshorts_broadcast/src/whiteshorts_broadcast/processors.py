@@ -90,13 +90,16 @@ def add_elfies_number(
     q90 = pd.to_numeric(df2.get(q90_col), errors="coerce")
 
     denom = 1.0 + (q90 - q10)
-    denom = denom.replace([np.inf, -np.inf], np.nan)
-
+    #denom = denom.replace([np.inf, -np.inf], np.nan)
+    denom = denom.where(np.isfinite(denom), np.nan)
+    
     valid = p.notna() & denom.notna() & (denom > 0)
 
     elfies = pd.Series(np.nan, index=df2.index, dtype="float64")
     elfies.loc[valid] = (p[valid] / denom[valid]).astype("float64")
 
+    #OLD
+    # df2[out_col] = elfies.replace([np.inf, -np.inf], np.nan)
     # ✅ new, safe replacement of infinities
     df2[out_col] = pd.Series(elfies, index=df2.index)
     df2[out_col] = df2[out_col].where(np.isfinite(df2[out_col]), np.nan)

@@ -22,6 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install typer duckdb joblib scikit-learn statsmodels pandas pyarrow requests
       - name: Install package
+        working-directory: ./packages/whiteshorts_broadcast
         run: |
           cd whiteshorts_broadcast
           pip install -U pip

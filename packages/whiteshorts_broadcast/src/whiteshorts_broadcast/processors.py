@@ -246,18 +246,18 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = normalize_columns(df2, cfg.rename_map)
     df2 = coerce_types(df2)
     df2 = normalize_dates(df2)
-    df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.5, None), "q10": (0.01, None), "q90": (0.5, None)})
+    df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.5, 20), "q10": (0.01, 20), "q90": (0.5, 20)})
     df2 = apply_elfies_topk_pipeline(
         df2,
         pred_col=getattr(cfg, "pred_col", "lambda_or_mu"),
         q10_col=getattr(cfg, "q10_col", "q10"),
         q90_col=getattr(cfg, "q90_col", "q90"),
         team_col=getattr(cfg, "team_col", "team"),
-        out_col=getattr(cfg, "elfies_out_col", "elfies_number"),
+        elfies_out_col=getattr(cfg, "elfies_out_col", "elfies_number"),
         top_k=getattr(cfg, "elfies_top_k", 4),
         keep_ties=getattr(cfg, "elfies_keep_ties", False),
     )
-    df2 = filter_columns_by_range(df2, {"elfies_number": (0.05, 20), "q10": (0.05, 20), "q90": (0.5, 20)})
+    df2 = filter_columns_by_range(df2, {"elfies_number": (0.2, 3)})
     df2 = nullify_non_finite(df2)     # <- critical for JSON
     df2 = drop_missing_required(df2, cfg.required_cols)
     

@@ -81,31 +81,37 @@ def add_elfies_number(
 ) -> pd.DataFrame:
     """
     Compute elfies_number = prediction / (1 + (q90 - q10)).
-    Safe against NaN, Inf, division-by-zero, and single-row Series collapsing.
+    Fully robust against NaN, Inf, division-by-zero, and single-row inputs.
     """
+    import numpy as np
+    import pandas as pd
+
     df2 = df.copy()
 
-    # --- Coerce to numeric safely ---
-    p = pd.to_numeric(df2.get(pred_col), errors="coerce")
-    q10 = pd.to_numeric(df2.get(q10_col), errors="coerce")
-    q90 = pd.to_numeric(df2.get(q90_col), errors="coerce")
+    # --- Coerce to numeric and always wrap as Series ---
+    p = pd.Series(pd.to_numeric(df2.get(pred_col, np.nan), errors="coerce"), index=df2.index)
+    q10 = pd.Series(pd.to_numeric(df2.get(q10_col, np.nan), errors="coerce"), index=df2.index)
+    q90 = pd.Series(pd.to_numeric(df2.get(q90_col, np.nan), errors="coerce"), index=df2.index)
 
     # --- Compute denominator safely ---
     denom = 1.0 + (q90 - q10)
-    # Ensure Series type and replace ±Inf and non-finite with NaN
     denom = pd.Series(denom, index=df2.index)
     denom = denom.where(np.isfinite(denom), np.nan)
 
-    # --- Compute elfies_number only where valid ---
-    valid = p.notna() & denom.notna() & (denom > 0)
-    elfies = pd.Series(np.nan, index=df2.index, dtype="float64")
-    elfies.loc[valid] = (p[valid] / denom[valid]).astype("float64")
+    # --- Boolean mask: safe even on single row ---
+    valid = (p.notna()) & (denom.notna()) & (denom > 0)
 
-    # --- Clean up infinities in result as well ---
+    # --- Compute elfies_number ---
+    elfies = pd.Series(np.nan, index=df2.index, dtype="float64")
+    if valid.any():
+        elfies.loc[valid] = (p[valid] / denom[valid]).astype("float64")
+
+    # --- Clean up infinities ---
     elfies = elfies.where(np.isfinite(elfies), np.nan)
     df2[out_col] = elfies
 
     return df2
+
 
 
 

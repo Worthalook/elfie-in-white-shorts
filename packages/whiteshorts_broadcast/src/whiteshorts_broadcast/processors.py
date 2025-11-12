@@ -74,9 +74,9 @@ def clip_columns(df: pd.DataFrame, clip_map: dict[str, tuple[float,float]]) -> p
 def add_elfies_number(
     df: pd.DataFrame,
     *,
-    pred_col: str = "pred_mean",
-    q10_col: str = "pred_q10",
-    q90_col: str = "pred_q90",
+    pred_col: str = "lambda_or_mu",
+    q10_col: str = "q10",
+    q90_col: str = "q90",
     out_col: str = "elfies_number",
 ) -> pd.DataFrame:
     """
@@ -206,10 +206,10 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = normalize_columns(df2, cfg.rename_map)
     df2 = coerce_types(df2)
     df2 = normalize_dates(df2)
-    df2 = clip_columns(df2, {"pred_mean": (0.5, 10), "pred_q10": (0, 10), "pred_q90": (0.5, 10)})
+    df2 = clip_columns(df2, {"lambda_or_mu": (0.5, 10), "q10": (0, 10), "q90": (0.5, 10)})
     df2 = apply_elfies_topk_pipeline(
         df2,
-        pred_col=getattr(cfg, "pred_col", "pred_mean"),
+        pred_col=getattr(cfg, "pred_col", "lambda_or_mu"),
         q10_col=getattr(cfg, "q10_col", "q10"),
         q90_col=getattr(cfg, "q90_col", "q90"),
         team_col=getattr(cfg, "team_col", "team"),

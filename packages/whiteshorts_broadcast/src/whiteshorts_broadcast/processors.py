@@ -257,7 +257,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         top_k=getattr(cfg, "elfies_top_k", 4),
         keep_ties=getattr(cfg, "elfies_keep_ties", False),
     )
-    df2 = filter_columns_by_range(df2, {"elfies_number": (None, 2), "q10": (0.01, None), "q90": (0.5, None)})
+    df2 = filter_columns_by_range(df2, {"elfies_number": (0.05, None), "q10": (0.05, None), "q90": (0.5, None)})
     df2 = nullify_non_finite(df2)     # <- critical for JSON
     df2 = drop_missing_required(df2, cfg.required_cols)
     

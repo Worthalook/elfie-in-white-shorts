@@ -167,9 +167,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
-             python - << 'PY'
+              python - << 'PY'
               import os, pandas as pd
-                        from whiteshorts_broadcast import publish_results, BroadcastConfig
+                from whiteshorts_broadcast import publish_results, BroadcastConfig
 
               df = pd.read_csv('data/parquet/predictions_*.csv')  # or the exact path you just wrote
               cfg = BroadcastConfig(

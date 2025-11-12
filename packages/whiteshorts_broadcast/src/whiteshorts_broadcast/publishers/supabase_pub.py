@@ -84,7 +84,8 @@ class SupabasePublisher:
         }
         keys = ",".join(self.cfg.upsert_on) if self.cfg.upsert_on else ""
         q = f"?on_conflict={keys}" if keys else ""
-        rows["player_id"] = rows["player_id"].split('.')[0]
+        rows["player_id"] = rows["player_id"].astype(str).str.split('.').str[0]
+
         payload = json.dumps(rows, allow_nan=False)  # will fail if anything non-finite remains
 
         resp = requests.post(url + q, headers=headers, data=payload)

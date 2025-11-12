@@ -1,7 +1,6 @@
 # processors.py
 import re
 import math
-import os,glob
 import numpy as np
 import pandas as pd
 from typing import Dict, List
@@ -14,9 +13,7 @@ def normalize_columns(df: pd.DataFrame, rename_map: Dict[str,str]) -> pd.DataFra
     df.columns = [_snake(c) for c in df.columns]
     return df
 
-def find_latest_csv(pattern: str):
-    files = sorted(glob.glob(pattern), key=os.path.getmtime, reverse=True)
-    return files[0] if files else None
+
 
 def coerce_types(df: pd.DataFrame) -> pd.DataFrame:
     """Light coercion: try numeric where sensible; keep strings otherwise."""

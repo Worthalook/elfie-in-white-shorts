@@ -108,7 +108,7 @@ def slate(
     # 1) Build feature history from YTD (+ current season if available)
     df_ytd = load_ytd(ytd_csv)
     cur_path = current_season_parquet or os.getenv("WS_CURRENT_SEASON_PARQUET", "data/current_season.parquet")
-    df_cur = load_current_season(cur_path)
+    df_cur = proj#load_current_season(cur_path)
 
     if df_cur is not None and not df_cur.empty:
         cols = sorted(set(df_ytd.columns).union(df_cur.columns))

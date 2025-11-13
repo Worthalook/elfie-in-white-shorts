@@ -89,7 +89,7 @@ jobs:
         run: flutter doctor -v
 
       # ---- Build APK ----
-    - name: Build App apk
+      - name: Build App apk
         working-directory: ./packages/whiteshorts_app2
         run: flutter build apk --release
 

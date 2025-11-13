@@ -54,6 +54,17 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Setup Java for Flutter
+        uses: actions/setup-java@v4
+        with:
+            distribution: 'temurin'
+            java-version: '17'
+      
+      - name: Build App apk
+        working-directory: ./packages/whiteshorts_app2
+        run: |
+            flutter build apk
+    
       - name: Cache pip
         uses: actions/cache@v4
         with:

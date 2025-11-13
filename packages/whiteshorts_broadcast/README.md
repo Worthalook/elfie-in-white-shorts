@@ -26,7 +26,7 @@ cfg = BroadcastConfig(
     supabase_anon_key="YOUR_SERVICE_KEY",
     supabase_table="predictions",
     upsert_on=["game_date","player_id","target"],
-    rename_map={"Player Name":"player_name"},
+    rename_map={"Player Name":"name"},
     required_cols=["game_date","player_id","target"]
 )
 

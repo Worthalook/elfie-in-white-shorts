@@ -1,8 +1,8 @@
 name: WS daily pipeline (AET)
 
-#on:
-  #push:
-    #branches: [ "main" ]
+on:
+  push:
+    branches: [ "development" ]
 
 
 jobs:

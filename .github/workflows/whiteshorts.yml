@@ -16,9 +16,9 @@ on:
         description: "Slate date (YYYY-MM-DD or DD/MM/YYYY). Leave empty for 'tomorrow' in Australia/Melbourne."
         required: false
         default: ""
-  schedule:
+  #schedule:
      # 09:05 Melbourne time daily ~= 22:05 UTC previous day
-     - cron: "19 22 * * *"
+     #- cron: "19 22 * * *"
 
 jobs:
   ws-pipeline:

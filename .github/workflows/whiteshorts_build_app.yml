@@ -68,4 +68,10 @@ jobs:
         working-directory: ./packages/whiteshorts_app2
         run: flutter build apk --release
 
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: whiteshorts-app-release
+            path: packages/whiteshorts_app2/build/app/outputs/flutter-apk/app-release.apk
+
     

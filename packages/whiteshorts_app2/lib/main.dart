@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'supabase_bootstrap.dart';
 import 'predictions_today.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -9,6 +10,8 @@ void main() async {
     supabaseUrl: const String.fromEnvironment('SUPABASE_URL', defaultValue: 'https://gbxxrfrmzgltdyfunwaa.supabase.co'),
     supabaseAnonKey: const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdieHhyZnJtemdsdGR5ZnVud2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4NjAxOTgsImV4cCI6MjA3ODQzNjE5OH0.X_CnVXWArB8tPO1Cq2I18dpeZ7de4dRZliIKVzmGFok'),
   );
+
+  await initLocalNotifications();
   runApp(const MyApp());
 }
 

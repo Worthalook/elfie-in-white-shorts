@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_bootstrap.dart';
+import 'notification_service.dart';
 
 class PredictionsTodayPage extends StatefulWidget {
   const PredictionsTodayPage({super.key});
@@ -74,6 +75,8 @@ String _fmt2(dynamic v) {
       final bn = (b['date'] ?? '') as String;
       return an.compareTo(bn);
     });
+
+    
   }
 
   Future<void> _load() async {
@@ -84,11 +87,14 @@ String _fmt2(dynamic v) {
         .gt('date', display_window_date)
         .order('date', ascending: false)
         .order('elfies_number', ascending: false);
+    
     if (mounted) {
       setState(() {
-        _rows
+         _rows
           ..clear()
           ..addAll(List<Map<String, dynamic>>.from(data));
+
+          
       });
     }
   }
@@ -102,11 +108,18 @@ String _fmt2(dynamic v) {
           schema: 'public',
           table: 'predictions',
           filter: PostgresChangeFilter(column: 'date', value: _today, type: PostgresChangeFilterType.eq),
-          callback: (payload) {
+          callback: (payload) async {
             final newRow = Map<String, dynamic>.from(payload.newRecord!);
             setState(() => _upsert(newRow));
+             // Fire a notification
+            await showDataUpdatedNotification(
+              title: 'NHL Games Updated',
+              body:
+                  'Row with id xx'//${newRow['name']} '
+                    + 'was updated in WhiteShorts.', // adjust as needed
+            );
           },
-        )
+    )
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
           schema: 'public',

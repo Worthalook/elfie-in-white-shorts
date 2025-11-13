@@ -1,0 +1,71 @@
+name: WS daily pipeline (AET)
+
+#on:
+  #push:
+    #branches: [ "main" ]
+
+
+jobs:
+  ws-pipeline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write    # needed to push data back to the repo
+      actions: read
+      checks: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          # If you later move DuckDB to Git LFS, also add:
+          # lfs: true
+
+      - name: Add src to PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/src:$PYTHONPATH" >> $GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ---- Java (AGP requires Java 17) ----
+      - name: Setup Java for Flutter
+        uses: actions/setup-java@v4
+        with:
+            distribution: 'temurin'
+            java-version: '17'
+
+      # ---- Install Flutter SDK ----
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+            #flutter-version: '3.24.2'   # or omit to use latest stable
+            channel: 'stable'
+            cache: true
+
+      # ---- Android SDK + system requirements ----
+      - name: Install Android dependencies
+        run: |
+            sudo apt-get update -y
+            sudo apt-get install -y clang cmake ninja-build libgtk-3-dev
+
+      # ---- Fetch pub dependencies ----
+      - name: Flutter Pub Get
+        working-directory: ./packages/whiteshorts_app2
+        run: flutter pub get
+
+      # ---- Accept Android licenses ----
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses
+
+      # ---- Validate environment ----
+      - name: Flutter Doctor
+        run: flutter doctor -v
+
+      # ---- Build APK ----
+      - name: Build App apk
+        working-directory: ./packages/whiteshorts_app2
+        run: flutter build apk --release
+
+    

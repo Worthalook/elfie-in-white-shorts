@@ -232,7 +232,7 @@ def top_k_per_team_by_score(
 def apply_elfies_topk_pipeline(
     df: pd.DataFrame,
     *,
-    pred_col: str = "pred_mean",
+    pred_col: str = "lambda_or_mu",
     q10_col: str = "q10",
     q90_col: str = "q90",
     team_col: str = "team",
@@ -346,11 +346,24 @@ def filter_to_projected_players_from_df(
     mask = df[player_id_col].isin(projected_ids)
     return df.loc[mask].reset_index(drop=True)
 
+def normalize_player_id(df: pd.DataFrame, col="player_id") -> pd.DataFrame:
+    if col not in df.columns:
+        return df
+    # Work on a copy of the series to avoid chained-assign warnings
+    s = df[col].astype("string")               # pandas StringDtype (not object)
+    s = s.str.strip()                          # remove trailing spaces like '12678342 '
+    # Extract digits only (protect against '12678342.0', '0012678342', etc.)
+    s = s.str.extract(r"(\d+)$", expand=False)
+    # Guarantee string dtype and no floats sneak back in:
+    df[col] = s.astype("string")
+    return df
 
 def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = df.copy()
     #df2 = df2.where(
     df2 = normalize_columns(df2, cfg.rename_map)
+    df2 = normalize_player_id(df2, "player_id")
+    df2 = normalize_player_id(df2, "PlayerID")
     #df2 = coerce_types(df2)
     df2 = normalize_dates(df2)
     
@@ -390,9 +403,11 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     )
     #----------------------------------------
 
-    df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.5, 20), "q10": (0.01, 20), "q90": (0.5, 20)})
+    df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.2, 20), "q10": (0, 20), "q90": (0.5, 20)})
     df2  =apply_elfies_topk_pipeline(
         df2,
+        rows = normalize_player_id(rows, "player_id")
+        rows = normalize_player_id(rows, "PlayerID")
         pred_col=getattr(cfg, "pred_col", "lambda_or_mu"),
         q10_col=getattr(cfg, "q10_col", "q10"),
         q90_col=getattr(cfg, "q90_col", "q90"),
@@ -401,7 +416,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         top_k=getattr(cfg, "elfies_top_k", 4),
         keep_ties=getattr(cfg, "elfies_keep_ties", False),
     )
-    df2 = filter_columns_by_range(df2, {"elfies_number": (0.2, 3)})
+    df2 = filter_columns_by_range(df2, {"elfies_number": (0.1, 3)})
     df2 = nullify_non_finite(df2)     # <- critical for JSON
     df2 = drop_missing_required(df2, cfg.required_cols)
     

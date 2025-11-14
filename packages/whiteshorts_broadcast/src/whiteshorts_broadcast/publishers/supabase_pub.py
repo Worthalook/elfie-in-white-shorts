@@ -1,6 +1,8 @@
 # publishers/supabase_pub.py
 import requests, json, math
+import pandas as pd
 import numpy as np
+import re
 
 def _to_json_safe_value(v):
     # Convert numpy scalars to native
@@ -61,6 +63,18 @@ def _sanitize_rows(rows):
             changed.append({"row_index": i, "changed": ch})
     return clean, changed
 
+def normalize_player_id(df: pd.DataFrame, col="player_id") -> pd.DataFrame:
+    if col not in df.columns:
+        return df
+    # Work on a copy of the series to avoid chained-assign warnings
+    s = df[col].astype("string")               # pandas StringDtype (not object)
+    s = s.str.strip()                          # remove trailing spaces like '12678342 '
+    # Extract digits only (protect against '12678342.0', '0012678342', etc.)
+    s = s.str.extract(r"(\d+)$", expand=False)
+    # Guarantee string dtype and no floats sneak back in:
+    df[col] = s.astype("string")
+    return df
+
 class SupabasePublisher:
     def __init__(self, cfg):
         self.cfg = cfg
@@ -68,7 +82,8 @@ class SupabasePublisher:
     def publish(self, rows):
         if not rows:
             return
-
+        rows = normalize_player_id(rows, "player_id")
+        rows = normalize_player_id(rows, "PlayerID")
         # ---- sanitize & log diffs
         rows, diffs = _sanitize_rows(rows)
         if diffs:

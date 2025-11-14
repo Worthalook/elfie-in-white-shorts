@@ -404,10 +404,9 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     #----------------------------------------
 
     df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.2, 20), "q10": (0, 20), "q90": (0.5, 20)})
+
     df2  =apply_elfies_topk_pipeline(
         df2,
-        rows = normalize_player_id(rows, "player_id")
-        rows = normalize_player_id(rows, "PlayerID")
         pred_col=getattr(cfg, "pred_col", "lambda_or_mu"),
         q10_col=getattr(cfg, "q10_col", "q10"),
         q90_col=getattr(cfg, "q90_col", "q90"),

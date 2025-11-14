@@ -159,35 +159,52 @@ def add_elfies_number(
 
 
 
-def top_k_per_team_by_score(
+import numpy as np
+import pandas as pd
+
+def top_k_per_team_by_score( 
     df: pd.DataFrame,
     *,
     team_col: str = "team",
+    target_col: str | None = "target",   # NEW: per-target within team
     score_col: str = "elfies_number",
     top_k: int = 4,
     # If True, include all rows tied at the boundary (may exceed top_k)
     keep_ties: bool = False,
 ) -> pd.DataFrame:
     """
-    Sort by score desc and keep top_k rows per team. Returns a new DataFrame
-    sorted by (team, score desc, then original order as tiebreaker).
+    Sort by score desc and keep top_k rows per group.
+
+    Grouping:
+      - If target_col is None → per team only.
+      - If target_col is not None → per (team, target).
+
+    Returns a new DataFrame sorted by (team, [target], score desc, then
+    original order as tiebreaker).
     """
+
+    # Basic column checks
     if team_col not in df.columns or score_col not in df.columns:
-        # Nothing to do if columns are missing
         return df.copy()
+    if target_col is not None and target_col not in df.columns:
+        return df.copy()
+
+    # Determine group columns
+    group_cols = [team_col] if target_col is None else [team_col, target_col]
 
     work = df.copy()
     # Make sure score is numeric
     work[score_col] = pd.to_numeric(work[score_col], errors="coerce")
-    # Stable sort: highest score first; keep original index for tie-breaks
+    # Stable sort: by group(s), then score desc, then original index for tie-breaks
+    sort_cols = group_cols + [score_col, "_orig_idx"]
+    ascending = [True] * len(group_cols) + [False, True]
+
     work["_orig_idx"] = np.arange(len(work))
-    work = work.sort_values([team_col, score_col, "_orig_idx"],
-                            ascending=[True, False, True],
-                            kind="mergesort")
+    work = work.sort_values(sort_cols, ascending=ascending, kind="mergesort")
 
     if not keep_ties:
         out = (
-            work.groupby(team_col, group_keys=False)
+            work.groupby(group_cols, group_keys=False)
                 .head(max(int(top_k), 0))
                 .drop(columns=["_orig_idx"])
         )
@@ -197,18 +214,19 @@ def top_k_per_team_by_score(
     def _take_with_ties(g: pd.DataFrame) -> pd.DataFrame:
         if top_k <= 0 or g.empty:
             return g.iloc[0:0]
-        # g is already sorted desc by score
+        # g is already sorted desc by score within each group
         boundary = g.iloc[min(len(g), top_k) - 1][score_col]
         mask = g[score_col] >= boundary
         return g.loc[mask]
 
     out = (
-        work.groupby(team_col, group_keys=False)
+        work.groupby(group_cols, group_keys=False)
             .apply(_take_with_ties)
             .drop(columns=["_orig_idx"])
             .reset_index(drop=True)
     )
     return out
+
 
 
 def apply_elfies_topk_pipeline(
@@ -246,6 +264,7 @@ def apply_elfies_topk_pipeline(
 
 def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = df.copy()
+    #df2 = df2.where(
     df2 = normalize_columns(df2, cfg.rename_map)
     #df2 = coerce_types(df2)
     df2 = normalize_dates(df2)

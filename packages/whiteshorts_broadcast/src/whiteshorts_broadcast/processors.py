@@ -421,4 +421,9 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     
     for fn in cfg.processors:
         df2 = fn(df2)
+        print("\n=== DEFAULT_PIPELINE FINAL DF COLUMNS ===")
+        for c in df2.columns:
+            print(f" - {c}")
+        print("========================================\n")
+    
     return df2.to_dict(orient="records")

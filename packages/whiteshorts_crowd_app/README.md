@@ -1,57 +1,16 @@
-# WhiteShorts Crowd App
+# whiteshorts_app2
 
-Minimal Flutter app for broadcasting NHL model predictions with:
+A new Flutter project.
 
-- Dark theme UI
-- Home screen with big buttons:
-  - Today's preds/results
-  - Yesterday's preds/results
-  - Create account / subscribe (holding page)
-  - Tip from a win (holding page)
-- Integration with Supabase table `predictions_for_broadcast`
-- Crowd-sourced `crowd_score` up/down voting for today's predictions
-- `actual_points` highlighted green when > 0
-- GitHub Actions workflow to build Android APK and attach as artifact
-- Supabase SQL migration to create the `predictions_for_broadcast` table
+## Getting Started
 
-## Quick start
+This project is a starting point for a Flutter application.
 
-1. Create a new Flutter project:
+A few resources to get you started if this is your first Flutter project:
 
-   ```bash
-   flutter create whiteshorts_crowd_app
-   ```
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-2. Replace the generated contents with this package's files:
-   - Overwrite `pubspec.yaml`
-   - Replace the `lib/` folder with this `lib/`
-   - Add `.github/workflows/flutter-ci.yml`
-   - Add the `supabase/migrations/001_create_predictions_for_broadcast.sql` file
-
-3. Set your Supabase credentials in `lib/supabase_client.dart`:
-
-   ```dart
-   static const String supabaseUrl = 'https://YOUR-PROJECT.supabase.co';
-   static const String supabaseAnonKey = 'YOUR-ANON-KEY';
-   ```
-
-4. Run pub get:
-
-   ```bash
-   flutter pub get
-   ```
-
-5. Apply the Supabase migration (via Supabase SQL editor or CLI):
-
-   ```sql
-   -- contents of supabase/migrations/001_create_predictions_for_broadcast.sql
-   ```
-
-6. Run the app:
-
-   ```bash
-   flutter run
-   ```
-
-7. (Optional) Push to GitHub; the included workflow will build an APK on each push to `main`
-   and upload it as an artifact.
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.

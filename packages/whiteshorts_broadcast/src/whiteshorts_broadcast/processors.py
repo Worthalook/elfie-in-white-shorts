@@ -262,12 +262,134 @@ def apply_elfies_topk_pipeline(
     )
     return df3
 
+import requests
+import pandas as pd
+import numpy as np
+from typing import Iterable, Set
+
+
+def _format_sportsdata_date(dt: pd.Timestamp) -> str:
+    """
+    SportsData.io wants dates like '2025-Oct-13'.
+    """
+    # Ensure it's a Timestamp
+    if not isinstance(dt, pd.Timestamp):
+        dt = pd.to_datetime(dt)
+    # Normalize to date only
+    dt = dt.normalize()
+    return dt.strftime("%Y-%b-%d")  # e.g. '2025-Oct-13'
+
+
+def fetch_projection_player_ids_for_dates(
+    dates: Iterable[pd.Timestamp],
+    api_key: str,
+) -> Set[int]:
+    """
+    For a collection of dates, call SportsData.io's
+    PlayerGameProjectionStatsByDate endpoint and return the union of
+    all PlayerIDs that have projections on any of those dates.
+    """
+    base_url = (
+        "https://api.sportsdata.io/api/nhl/fantasy/json/"
+        "PlayerGameProjectionStatsByDate"
+    )
+
+    all_ids: Set[int] = set()
+
+    for dt in pd.unique(list(dates)):
+        if pd.isna(dt):
+            continue
+
+        formatted = _format_sportsdata_date(pd.to_datetime(dt))
+        url = f"{base_url}/{formatted}"
+
+        resp = requests.get(url, params={"key": api_key}, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+
+        for row in data:
+            pid = row.get("PlayerID")
+            if pid is not None:
+                try:
+                    all_ids.add(int(pid))
+                except (TypeError, ValueError):
+                    continue
+
+    return all_ids
+
+
+def filter_to_projected_players_from_df(
+    df: pd.DataFrame,
+    *,
+    api_key: str,
+    player_id_col: str = "sportsdata_player_id",
+    date_col: str = "date",
+) -> pd.DataFrame:
+    """
+    Use dates present in `df[date_col]` to fetch SportsData projections,
+    then keep only rows whose player ID appears in *any* of those projections.
+    """
+    # Must have both date and player ID columns
+    if player_id_col not in df.columns or date_col not in df.columns:
+        return df
+
+    # Collect unique non-null dates
+    unique_dates = df[date_col].dropna().unique()
+    if len(unique_dates) == 0:
+        return df
+
+    projected_ids = fetch_projection_player_ids_for_dates(unique_dates, api_key=api_key)
+    if not projected_ids:
+        # No projections returned for those dates; safest is to keep everything
+        return df
+
+    mask = df[player_id_col].isin(projected_ids)
+    return df.loc[mask].reset_index(drop=True)
+
+
 def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = df.copy()
     #df2 = df2.where(
     df2 = normalize_columns(df2, cfg.rename_map)
     #df2 = coerce_types(df2)
     df2 = normalize_dates(df2)
+    
+    #--------------------------------------
+    # 3) Remove players NOT in projections (per DF's own dates)
+    api_key = getattr(cfg, "sportsdata_api_key", None)
+    player_id_col = getattr(cfg, "player_id_col", "player_id")
+    date_col = getattr(cfg, "date_col", "date")  # or "game_date" if that's your name
+
+    if api_key:
+        df2 = filter_to_projected_players_from_df(
+            df2,
+            api_key=api_key,
+            player_id_col=player_id_col,
+            date_col=date_col,
+        )
+
+    # 4) Your existing filtering logic
+    df2 = filter_columns_by_range(
+        df2,
+        {
+            "lambda_or_mu": (0.5, 20),
+            "q10": (0.01, 20),
+            "q90": (0.5, 20),
+        },
+    )
+
+    df2 = apply_elfies_topk_pipeline(
+        df2,
+        pred_col=getattr(cfg, "pred_col", "lambda_or_mu"),
+        q10_col=getattr(cfg, "q10_col", "q10"),
+        q90_col=getattr(cfg, "q90_col", "q90"),
+        team_col=getattr(cfg, "team_col", "team"),
+        out_col=getattr(cfg, "elfies_out_col", "elfies_number"),
+        top_k=getattr(cfg, "elfies_top_k", 4),
+        keep_ties=getattr(cfg, "elfies_keep_ties", False),
+    )
+    #----------------------------------------
+
     df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.5, 20), "q10": (0.01, 20), "q90": (0.5, 20)})
     df2  =apply_elfies_topk_pipeline(
         df2,

@@ -18,3 +18,4 @@ class BroadcastConfig:
     processors: List[Callable[[Any], Any]] = field(default_factory=list)
     rename_map: Dict[str,str] = field(default_factory=dict)
     required_cols: List[str] = field(default_factory=list)
+    sportsdata_api_key: str = "3cafb838ee6d41d7afc0ec33174884a2"

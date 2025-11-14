@@ -54,7 +54,7 @@ jobs:
 
       # ---- Fetch pub dependencies ----
       - name: Flutter Pub Get
-        working-directory: ./packages/whiteshorts_app2
+        working-directory: ./packages/whiteshorts_crowd_app
         run: flutter pub get
 
       # ---- Accept Android licenses ----
@@ -67,7 +67,7 @@ jobs:
 
       # ---- Build APK ----
       - name: Build App apk
-        working-directory: ./packages/whiteshorts_app2
+        working-directory: ./packages/whiteshorts_crowd_app
         run: flutter build apk --release
 
       - name: Upload APK artifact

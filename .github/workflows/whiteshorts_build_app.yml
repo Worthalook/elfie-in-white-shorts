@@ -11,7 +11,7 @@ jobs:
   ws-pipeline:
     runs-on: ubuntu-latest
     permissions:
-      contents: write    # needed to push data back to the repo
+      contents: write    # need ed to push data back to the repo
       actions: read
       checks: read
     steps:

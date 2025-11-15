@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
-          # If you later move DuckDB to Git LFS, also add:
+          # If insertef you later move DuckDB to Git LFS, also add:
           # lfs: true
 
       - name: Add src to PYTHONPATH

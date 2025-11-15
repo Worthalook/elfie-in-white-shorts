@@ -234,7 +234,7 @@ jobs:
         run: |
           python -m white_shorts.cli.dashboards build --days 14 --out data/dashboards
 
-      - name: Upload dashboards (csv + html)
+      - name: Upload dashboards (csv + html) 
         uses: actions/upload-artifact@v4
         with:
           name: dashboards-${{ steps.dates.outputs.slate }}

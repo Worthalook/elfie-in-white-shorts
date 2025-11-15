@@ -194,15 +194,15 @@ jobs:
               from whiteshorts_broadcast import publish_results, BroadcastConfig, find_latest_csv
               csv_path = find_latest_csv("data/parquet/predictions_*.csv") 
 
-              df1 = pd.read_csv(find_latest_csv('data/parquet/predictions_2025-11-11_*.csv')) #csv_path
-              df2 = pd.read_csv(find_latest_csv('data/parquet/predictions_2025-11-12_*.csv'))
-              df3 = pd.read_csv(find_latest_csv('data/parquet/predictions_2025-11-13_*.csv'))
+              df1 = pd.read_csv(find_latest_csv('data/parquet/predictions_2025-11-13_*.csv')) #csv_path
+              df2 = pd.read_csv(find_latest_csv('data/parquet/predictions_2025-11-14_*.csv'))
+              df3 = pd.read_csv(find_latest_csv('data/parquet/predictions_2025-11-15_*.csv'))
               
               cfg = BroadcastConfig(
               backend='supabase',
               supabase_url=os.environ['SUPABASE_URL'],
               supabase_anon_key=os.environ['SUPABASE_SERVICE_KEY'],
-              supabase_table='https://gbxxrfrmzgltdyfunwaa.supabase.co',
+              supabase_table='predictions_for_broadcast',
               upsert_on=['date','player_id','target'])
               
               publish_results(df1, cfg)

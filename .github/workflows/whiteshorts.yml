@@ -202,7 +202,7 @@ jobs:
               backend='supabase',
               supabase_url=os.environ['SUPABASE_URL'],
               supabase_anon_key=os.environ['SUPABASE_SERVICE_KEY'],
-              supabase_table='predictions',
+              supabase_table='https://gbxxrfrmzgltdyfunwaa.supabase.co',
               upsert_on=['date','player_id','target'])
               
               publish_results(df1, cfg)

@@ -23,7 +23,9 @@ CREATE TABLE predictions_for_broadcast (
 
     -- App-only fields
     actual_points numeric,
-    crowd_score integer NOT NULL DEFAULT 0
+    crowd_score integer NOT NULL DEFAULT 0,
+    crowd_flag_game_total boolean NOT NULL DEFAULT false,
+    crowd_flag_injury boolean NOT NULL DEFAULT false
 );
 
 CREATE INDEX idx_pfb_date ON predictions_for_broadcast (date);

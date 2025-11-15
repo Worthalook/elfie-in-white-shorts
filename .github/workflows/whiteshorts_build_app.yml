@@ -74,6 +74,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             name: whiteshorts-app-release
-            path: packages/whiteshorts_app2/build/app/outputs/flutter-apk/app-release.apk
+            path: packages/whiteshorts_crowd_app/build/app/outputs/flutter-apk/app-release.apk
 
     

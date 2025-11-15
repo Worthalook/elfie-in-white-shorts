@@ -134,7 +134,7 @@ class PredictionCard extends StatelessWidget {
                 if (enableVoting) ...[
                   IconButton(
                     icon: const Icon(Icons.thumb_up_alt_outlined),
-                    onPressed: () => onVote(prediction, +1),
+                    onPressed: () => onVote(prediction, 1),
                     tooltip: 'Up-vote',
                   ),
                   IconButton(

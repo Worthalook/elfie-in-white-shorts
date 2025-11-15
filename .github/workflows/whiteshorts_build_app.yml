@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
           # If you later move DuckDB to Git LFS, also add:
-          # lfs: true
+          # lfs: true..
 
       - name: Add src to PYTHONPATH
         run: echo "PYTHONPATH=$GITHUB_WORKSPACE/src:$PYTHONPATH" >> $GITHUB_ENV

@@ -375,11 +375,11 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     print(f"\n=== DEFAULT_PIPELINE COUNT  0 OF DF ROWS {len(df2)}===")
 
     if api_key:
-        df2 = filter_to_projected_players_from_df(
-            df2,
-            api_key=api_key,
-            player_id_col="player_id",
-            date_col="date",
+        #df2 = filter_to_projected_players_from_df(
+            #df2,
+            #api_key=api_key,
+            #player_id_col="player_id",
+            #date_col="date",
         )
 
     # 4) Your existing filtering logic

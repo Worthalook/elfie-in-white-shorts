@@ -1,4 +1,4 @@
-a# publishers/supabase_pub.py
+# publishers/supabase_pub.py
 import requests, json, math
 import pandas as pd
 import numpy as np

@@ -374,7 +374,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     date_col = getattr(cfg, "date_col", "date")  # or "game_date" if that's your name
     print(f"\n=== DEFAULT_PIPELINE COUNT  0 OF DF ROWS {len(df2)}===")
 
-    if api_key:
+    #if api_key:
         #df2 = filter_to_projected_players_from_df(
             #df2,
             #api_key=api_key,

@@ -428,7 +428,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     print(f"\n=== DEFAULT_PIPELINE COUNT OF DF ROWS {len(df2)}===")
     print("\n=== DEFAULT_PIPELINE FINAL DF ROWS ===")
     for index, row in df.iterrows():
-        print(f" - {row["name"]}")
+        print(f"Row: - {row["name"]}")
     print("========================================\n")
     
     

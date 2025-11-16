@@ -3,6 +3,9 @@ import requests, json, math
 import pandas as pd
 import numpy as np
 import re
+from collections import OrderedDict
+
+
 
 def _to_json_safe_value(v):
     # Convert numpy scalars to native
@@ -75,6 +78,17 @@ def normalize_player_id(df: pd.DataFrame, col="player_id") -> pd.DataFrame:
     df[col] = s.astype("string")
     return df
 
+def dedupe_by_keys(rows, key_fields):
+    """
+    Deduplicate list[dict] by key_fields.
+    Keeps the LAST row for each key tuple.
+    """
+    seen = OrderedDict()
+    for row in rows:
+        key = tuple(row.get(k) for k in key_fields)
+        seen[key] = row  # last write wins
+    return list(seen.values())
+
 class SupabasePublisher:
     def __init__(self, cfg):
         self.cfg = cfg
@@ -97,11 +111,12 @@ class SupabasePublisher:
             "Content-Type": "application/json",
             "Prefer": "resolution=merge-duplicates,return=representation"
         }
-        con = ["date", "game_id", "team", "player_id", "model_name"] 
-        keys = ",".join(con) if self.cfg.upsert_on else ""
-        #keys = ["date", "game_id", "team", "player_id", "model_name"]
+        key_fields = ["date", "game_id", "team", "player_id", "model_name"] 
+        rows = dedupe_by_keys(rows, key_fields)
+
+        # Build on_conflict query param
+        keys = ",".join(key_fields) if key_fields else ""
         q = f"?on_conflict={keys}" if keys else ""
-        #rows["player_id"] = rows["player_id"].astype(str).str.split('.').str[0]
 
         payload = json.dumps(rows, allow_nan=False)  # will fail if anything non-finite remains
 

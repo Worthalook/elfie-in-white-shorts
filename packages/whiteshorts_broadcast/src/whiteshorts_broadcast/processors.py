@@ -390,6 +390,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
             "q90": (0.5, 20),
         },
     )
+    print(f"\n=== DEFAULT_PIPELINE COUNT 1 OF DF ROWS {len(df2)}===")
 
     df2 = apply_elfies_topk_pipeline(
         df2,
@@ -402,8 +403,10 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         keep_ties=getattr(cfg, "elfies_keep_ties", False),
     )
     #----------------------------------------
+    print(f"\n=== DEFAULT_PIPELINE COUNT 2 OF DF ROWS {len(df2)}===")
 
     df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.2, 20), "q10": (0, 20), "q90": (0.5, 20)})
+    print(f"\n=== DEFAULT_PIPELINE COUNT 3 OF DF ROWS {len(df2)}===")
 
     df2  =apply_elfies_topk_pipeline(
         df2,
@@ -415,7 +418,10 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         top_k=getattr(cfg, "elfies_top_k", 4),
         keep_ties=getattr(cfg, "elfies_keep_ties", False),
     )
+    
     df2 = filter_columns_by_range(df2, {"elfies_number": (0.1, 3)})
+    print(f"\n=== DEFAULT_PIPELINE COUNT 4 OF DF ROWS {len(df2)}===")
+
     df2 = nullify_non_finite(df2)     # <- critical for JSON
     df2 = drop_missing_required(df2, cfg.required_cols)
     
@@ -427,7 +433,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     print("========================================\n")
     print(f"\n=== DEFAULT_PIPELINE COUNT OF DF ROWS {len(df2)}===")
     print("\n=== DEFAULT_PIPELINE FINAL DF ROWS ===")
-    for index, row in df.iterrows():
+    for index, row in df2.iterrows():
         n = row["name"]
         d = row["date"]
         print(f"Name: - {n}, date: {d}")

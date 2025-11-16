@@ -98,7 +98,7 @@ class SupabasePublisher:
             "Prefer": "resolution=merge-duplicates,return=representation"
         }
         con = ["date", "game_id", "team", "player_id", "model_name"] 
-        keys = ",".join(con if self.cfg.upsert_on else ""
+        keys = ",".join(con) if self.cfg.upsert_on else ""
         #keys = ["date", "game_id", "team", "player_id", "model_name"]
         q = f"?on_conflict={keys}" if keys else ""
         #rows["player_id"] = rows["player_id"].astype(str).str.split('.').str[0]

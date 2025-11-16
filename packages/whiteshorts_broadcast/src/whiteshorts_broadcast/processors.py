@@ -1,4 +1,4 @@
-# processors.py
+9i# processors.py
 import re
 import math
 import numpy as np
@@ -378,8 +378,8 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         df2 = filter_to_projected_players_from_df(
             df2,
             api_key=api_key,
-            player_id_col=player_id_col,
-            date_col=date_col,
+            player_id_col="player_id",
+            date_col="date",
         )
 
     # 4) Your existing filtering logic

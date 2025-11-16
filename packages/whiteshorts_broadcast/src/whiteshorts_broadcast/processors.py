@@ -386,7 +386,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         df2,
         {
             "lambda_or_mu": (0.5, 20),
-            "q10": (0.01, 20),
+            #"q10": (0.01, 20),
             "q90": (0.5, 20),
         },
     )

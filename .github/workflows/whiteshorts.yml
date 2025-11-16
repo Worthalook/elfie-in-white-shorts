@@ -1,8 +1,8 @@
 name: WS daily pipeline (AET)
 
 on:
-  #push:
-    #branches: [ "main" ]
+  push:
+    branches: [ "development" ]
 
   workflow_dispatch:
     inputs:

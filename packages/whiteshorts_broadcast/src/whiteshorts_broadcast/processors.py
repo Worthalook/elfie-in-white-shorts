@@ -380,7 +380,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
             #api_key=api_key,
             #player_id_col="player_id",
             #date_col="date",
-        )
+        
 
     # 4) Your existing filtering logic
     df2 = filter_columns_by_range(

@@ -369,7 +369,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     
     #--------------------------------------
     # 3) Remove players NOT in projections (per DF's own dates)
-    api_key = getattr(cfg, "sportsdata_api_key", None)
+    api_key = getattr(cfg, "sportsdata_api_key", "")
     player_id_col = getattr(cfg, "player_id_col", "player_id")
     date_col = getattr(cfg, "date_col", "date")  # or "game_date" if that's your name
 
@@ -425,5 +425,11 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     for c in df2.columns:
         print(f" - {c}")
     print("========================================\n")
+    print(f"\n=== DEFAULT_PIPELINE COUNT OF DF ROWS {len(df2)}===")
+    print("\n=== DEFAULT_PIPELINE FINAL DF ROWS ===")
+    for index, row in df.iterrows():
+        print(f" - {row["name"]}")
+    print("========================================\n")
+    
     
     return df2.to_dict(orient="records")

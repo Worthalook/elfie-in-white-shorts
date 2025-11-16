@@ -1,10 +1,10 @@
 
 name: WS Build App pipeline
 
-#on:
+on:
   # push:
   #  branches: [ "development" ]
-workflow_dispatch:{}
+  workflow_dispatch: {}
 
 
 jobs:

@@ -82,7 +82,7 @@ class SupabasePublisher:
     def publish(self, rows):
         if not rows:
             return
-        rows = normalize_player_id(rows, "player_id")
+        # rows = normalize_player_id(rows, "player_id")
         #rows = normalize_player_id(rows, "PlayerID")
         # ---- sanitize & log diffs
         rows, diffs = _sanitize_rows(rows)

@@ -21,6 +21,7 @@ class BroadcastPrediction {
   final int crowdScore;
   final bool crowdFlagGameTotal;
   final bool crowdFlagInjury;
+  final bool notPlaying;
 
   BroadcastPrediction({
     required this.id,
@@ -45,6 +46,7 @@ class BroadcastPrediction {
     required this.crowdScore,
     required this.crowdFlagGameTotal,
     required this.crowdFlagInjury,
+    required this.notPlaying,
   });
 
   factory BroadcastPrediction.fromJson(Map<String, dynamic> json) {
@@ -73,6 +75,7 @@ class BroadcastPrediction {
       crowdScore: (json['crowd_score'] ?? 0) as int,
       crowdFlagGameTotal: (json['crowd_flag_game_total'] ?? false) as bool,
       crowdFlagInjury: (json['crowd_flag_injury'] ?? false) as bool,
+      notPlaying: (json['flag_not_playing'] ?? false) as bool,
     );
   }
 
@@ -80,6 +83,7 @@ class BroadcastPrediction {
     int? crowdScore,
     bool? crowdFlagGameTotal,
     bool? crowdFlagInjury,
+    bool? notPlaying,
   }) {
     return BroadcastPrediction(
       id: id,
@@ -104,6 +108,7 @@ class BroadcastPrediction {
       crowdScore: crowdScore ?? this.crowdScore,
       crowdFlagGameTotal: crowdFlagGameTotal ?? this.crowdFlagGameTotal,
       crowdFlagInjury: crowdFlagInjury ?? this.crowdFlagInjury,
+      notPlaying: notPlaying ?? this.notPlaying,
     );
   }
 }

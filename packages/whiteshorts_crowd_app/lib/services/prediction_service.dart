@@ -16,7 +16,9 @@ class PredictionService {
         .from('predictions_for_broadcast')
         .select()
         .eq('date', dateStr)
-        .order('name');
+        .order('team', ascending: false)
+        .order('elfies_number', ascending: false)
+        .order('flag_not_playing',ascending: true);
 
     final list = (response as List)
         .map((row) => BroadcastPrediction.fromJson(row as Map<String, dynamic>))
@@ -48,12 +50,14 @@ class PredictionService {
     BroadcastPrediction prediction, {
     required bool gameTotal,
     required bool injury,
+    required bool notPlaying,
   }) async {
     await _client
         .from('predictions_for_broadcast')
         .update({
           'crowd_flag_game_total': gameTotal,
           'crowd_flag_injury': injury,
+          'flag_not_playing': notPlaying,
         })
         .eq('id', prediction.id);
   }

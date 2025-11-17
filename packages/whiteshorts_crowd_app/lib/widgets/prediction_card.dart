@@ -31,6 +31,9 @@ class PredictionCard extends StatelessWidget {
     if (prediction.crowdFlagInjury) {
       flags.add('Injury / role');
     }
+    if (prediction.notPlaying) {
+      flags.add('Player Out');
+    }
     if (flags.isEmpty) {
       return 'Flags: none';
     }
@@ -142,6 +145,7 @@ class PredictionCard extends StatelessWidget {
                     onPressed: () => onVote(prediction, -1),
                     tooltip: 'Down-vote',
                   ),
+                  
                 ],
                 if (canEditFlags) ...[
                   const SizedBox(height: 4),

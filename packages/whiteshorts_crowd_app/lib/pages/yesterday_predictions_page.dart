@@ -24,6 +24,97 @@ class _YesterdayPredictionsPageState extends State<YesterdayPredictionsPage> {
     _future = _service.fetchYesterday();
   }
 
+  Future<void> _handleVote(BroadcastPrediction prediction, int delta) async {
+    await _service.updateCrowdScore(prediction, delta);
+    setState(() {
+      _future = _future.then((list) {
+        return list
+            .map((p) => p.id == prediction.id
+                ? p.copyWith(crowdScore: p.crowdScore + delta)
+                : p)
+            .toList();
+      });
+    });
+  }
+
+  Future<void> _openFlagsDialog(BroadcastPrediction prediction) async {
+    bool gameTotal = prediction.crowdFlagGameTotal;
+    bool injury = prediction.crowdFlagInjury;
+    bool notPlaying = prediction.notPlaying;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Edit flags'),
+          content: StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SwitchListTile(
+                    title: const Text('Game total may be too low'),
+                    value: gameTotal,
+                    onChanged: (val) {
+                      setStateDialog(() {
+                        gameTotal = val;
+                      });
+                    },
+                  ),
+                  SwitchListTile(
+                    title: const Text('Injury / role risk'),
+                    value: injury,
+                    onChanged: (val) {
+                      setStateDialog(() {
+                        injury = val;
+                      });
+                    },
+                  ),
+                  SwitchListTile(
+                    title: const Text('Player not playing'),
+                    value: notPlaying,
+                    onChanged: (val) {
+                      setStateDialog(() {
+                        notPlaying = val;
+                      });
+                    },
+                  )
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      await _service.updateFlags(prediction, gameTotal: gameTotal, injury: injury, notPlaying: notPlaying);
+      setState(() {
+        _future = _future.then((list) {
+          return list
+              .map((p) => p.id == prediction.id
+                  ? p.copyWith(
+                      crowdFlagGameTotal: gameTotal,
+                      crowdFlagInjury: injury,
+                      notPlaying: notPlaying
+                    )
+                  : p)
+              .toList();
+        });
+      });
+    }
+  }
+
   List<BroadcastPrediction> _applyFilters(
       List<BroadcastPrediction> predictions) {
     return predictions.where((p) {
@@ -154,9 +245,10 @@ class _YesterdayPredictionsPageState extends State<YesterdayPredictionsPage> {
                     final p = filtered[index];
                     return PredictionCard(
                       prediction: p,
-                      enableVoting: false,
-                      onVote: (_, __) async {},
-                      canEditFlags: false,
+                      enableVoting: true,
+                      onVote: _handleVote,
+                      canEditFlags: true,
+                      onEditFlags: () => _openFlagsDialog(p),
                     );
                   },
                 ),

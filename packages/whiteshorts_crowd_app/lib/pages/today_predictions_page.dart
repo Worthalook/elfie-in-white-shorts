@@ -8,7 +8,8 @@ class TodayPredictionsPage extends StatefulWidget {
   const TodayPredictionsPage({super.key});
 
   @override
-  State<TodayPredictionsPage> createState() => _TodayPredictionsPageState();
+  State<TodayPredictionsPage> createState() =>
+      _TodayPredictionsPageState();
 }
 
 class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
@@ -39,6 +40,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
   Future<void> _openFlagsDialog(BroadcastPrediction prediction) async {
     bool gameTotal = prediction.crowdFlagGameTotal;
     bool injury = prediction.crowdFlagInjury;
+    bool notPlaying = prediction.notPlaying;
 
     final result = await showDialog<bool>(
       context: context,
@@ -51,7 +53,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SwitchListTile(
-                    title: const Text('Game total feels off'),
+                    title: const Text('Game total may be too low'),
                     value: gameTotal,
                     onChanged: (val) {
                       setStateDialog(() {
@@ -68,6 +70,15 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
                       });
                     },
                   ),
+                  SwitchListTile(
+                    title: const Text('Player not playing'),
+                    value: notPlaying,
+                    onChanged: (val) {
+                      setStateDialog(() {
+                        notPlaying = val;
+                      });
+                    },
+                  )
                 ],
               );
             },
@@ -87,7 +98,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
     );
 
     if (result == true) {
-      await _service.updateFlags(prediction, gameTotal: gameTotal, injury: injury);
+      await _service.updateFlags(prediction, gameTotal: gameTotal, injury: injury, notPlaying: notPlaying);
       setState(() {
         _future = _future.then((list) {
           return list
@@ -95,6 +106,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
                   ? p.copyWith(
                       crowdFlagGameTotal: gameTotal,
                       crowdFlagInjury: injury,
+                      notPlaying: notPlaying
                     )
                   : p)
               .toList();
@@ -130,7 +142,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
       ..sort();
 
     return Card(
-      color: cs.surfaceVariant,
+      color: cs.surfaceContainerHighest,
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Padding(
         padding: const EdgeInsets.all(8),
@@ -195,7 +207,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Today's preds/results"),
+        title: const Text("Todays's preds/results"),
       ),
       body: FutureBuilder<List<BroadcastPrediction>>(
         future: _future,
@@ -216,7 +228,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
 
           if (predictions.isEmpty) {
             return const Center(
-              child: Text('No predictions for today.'),
+              child: Text('Still waiting on Teams...'),
             );
           }
 

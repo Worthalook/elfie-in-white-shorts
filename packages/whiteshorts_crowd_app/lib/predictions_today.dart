@@ -82,7 +82,7 @@ String _fmt2(dynamic v) {
   Future<void> _load() async {
     final supabase = SupabaseBootstrap.client;
     final data = await supabase
-        .from('predictions')
+        .from('predictions_for_broadcast')
         .select()
         .gt('date', display_window_date)
         .order('date', ascending: false)
@@ -106,7 +106,7 @@ String _fmt2(dynamic v) {
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
           schema: 'public',
-          table: 'predictions',
+          table: 'predictions_for_broadcast',
           filter: PostgresChangeFilter(column: 'date', value: _today, type: PostgresChangeFilterType.eq),
           callback: (payload) async {
             final newRow = Map<String, dynamic>.from(payload.newRecord!);
@@ -123,7 +123,7 @@ String _fmt2(dynamic v) {
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
           schema: 'public',
-          table: 'predictions',
+          table: 'predictions_for_broadcast',
           filter: PostgresChangeFilter(column: 'date', value: _today, type: PostgresChangeFilterType.eq),
           callback: (payload) {
             final newRow = Map<String, dynamic>.from(payload.newRecord!);
@@ -133,7 +133,7 @@ String _fmt2(dynamic v) {
         .onPostgresChanges(
           event: PostgresChangeEvent.delete,
           schema: 'public',
-          table: 'predictions',
+          table: 'predictions_for_broadcast',
           filter: PostgresChangeFilter(column: 'date', value: _today, type: PostgresChangeFilterType.eq),
           callback: (payload) {
             final oldRow = Map<String, dynamic>.from(payload.oldRecord!);

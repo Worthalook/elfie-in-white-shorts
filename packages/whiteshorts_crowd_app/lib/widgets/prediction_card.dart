@@ -82,7 +82,7 @@ class PredictionCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Elfies Score: ${prediction.elfies_score ?? "-"}',
+                    'Elfies Score: ${prediction.elfiesNumber ?? "-"}',
                     style: TextStyle(
                       color: cs.onSurfaceVariant,
                     ),
@@ -108,7 +108,7 @@ class PredictionCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Actual: ${hasActual ? actual!.toStringAsFixed(1) : "-"}',
+                    ' ?Actual: ${hasActual ? actual!.toStringAsFixed(1) : "-"}',
                     style: actualStyle,
                   ),
                   const SizedBox(height: 4),

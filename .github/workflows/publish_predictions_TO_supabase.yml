@@ -40,7 +40,7 @@ jobs:
               python - << 'PY'
               import os, pandas as pd
               from whiteshorts_broadcast import publish_results, BroadcastConfig, find_latest_csv
-              #csv_path = find_latest_csv("data/parquet/predictions_*.csv") 
+              csv_path = find_latest_csv("data/parquet/predictions_*.csv") 
 
               df = pd.read_csv('data/parquet/predictions_2025-11-13_6401573150754847906.csv')  # or the exact path you just wrote
               df2 = pd.read_csv('data/parquet/predictions_2025-11-14_8448672720108401472.csv')  # or the exact path you just wrote
@@ -48,11 +48,11 @@ jobs:
               df4 = pd.read_csv('data/parquet/predictions_2025-11-16_4318488430611622696.csv')  # or the exact path you just wrote
 
 
-              cfg = BroadcastConfig(
+               cfg = BroadcastConfig(
               backend='supabase',
               supabase_url=os.environ['SUPABASE_URL'],
               supabase_anon_key=os.environ['SUPABASE_SERVICE_KEY'],
-              supabase_table='predictions',
+              supabase_table='predictions_for_broadcast',
               upsert_on=['date','player_id','target'])
               publish_results(df, cfg)
               publish_results(df2, cfg)

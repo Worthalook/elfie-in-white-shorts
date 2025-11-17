@@ -362,7 +362,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = df.copy()
     #df2 = df2.where(
     df2 = normalize_columns(df2, cfg.rename_map)
-    #df2 = normalize_player_id(df2, "player_id")
+    df2 = normalize_player_id(df2, "player_id")
     #df2 = normalize_player_id(df2, "PlayerID")
     #df2 = coerce_types(df2)
     df2 = normalize_dates(df2)

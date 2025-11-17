@@ -349,13 +349,19 @@ def filter_to_projected_players_from_df(
 def normalize_player_id(df: pd.DataFrame, col="player_id") -> pd.DataFrame:
     if col not in df.columns:
         return df
-    # Work on a copy of the series to avoid chained-assign warnings
-    s = df[col].astype("string")               # pandas StringDtype (not object)
-    s = s.str.strip()                          # remove trailing spaces like '12678342 '
-    # Extract digits only (protect against '12678342.0', '0012678342', etc.)
-    s = s.str.extract(r"(\d+)$", expand=False)
-    # Guarantee string dtype and no floats sneak back in:
+
+    # Convert to string dtype
+    s = df[col].astype("string").str.strip()
+
+    # Remove trailing ".0", ".00", ".000", etc.
+    s = s.str.replace(r"\.0+$", "", regex=True)
+
+    # Remove all non-digit characters just in case
+    s = s.str.replace(r"\D", "", regex=True)
+
+    # Assign back
     df[col] = s.astype("string")
+
     return df
 
 def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:

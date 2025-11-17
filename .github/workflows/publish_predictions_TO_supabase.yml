@@ -48,7 +48,7 @@ jobs:
               df4 = pd.read_csv('data/parquet/predictions_2025-11-16_4318488430611622696.csv')  # or the exact path you just wrote
 
 
-               cfg = BroadcastConfig(
+              cfg = BroadcastConfig(
               backend='supabase',
               supabase_url=os.environ['SUPABASE_URL'],
               supabase_anon_key=os.environ['SUPABASE_SERVICE_KEY'],

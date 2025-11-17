@@ -82,7 +82,7 @@ class PredictionCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Target: ${prediction.target ?? "-"}',
+                    'Elfies Score: ${prediction.elfies_score ?? "-"}',
                     style: TextStyle(
                       color: cs.onSurfaceVariant,
                     ),

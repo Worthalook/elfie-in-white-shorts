@@ -1,9 +1,11 @@
 name: Publish predictions to Supabase
 
 on:
-  workflow_dispatch: {}
-  # push:
-  #  branches: ["main"]
+  
+    push:
+       branches: ["development"]
+
+    workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -40,7 +42,12 @@ jobs:
               from whiteshorts_broadcast import publish_results, BroadcastConfig, find_latest_csv
               #csv_path = find_latest_csv("data/parquet/predictions_*.csv") 
 
-              df = pd.read_csv('data/parquet/predictions_2025-11-12_3042149801056478282.csv')  # or the exact path you just wrote
+              df = pd.read_csv('data/parquet/predictions_2025-11-13_6401573150754847906.csv')  # or the exact path you just wrote
+              df2 = pd.read_csv('data/parquet/predictions_2025-11-14_8448672720108401472.csv')  # or the exact path you just wrote
+              df3 = pd.read_csv('data/parquet/predictions_2025-11-15_2574938582593037793.csv')  # or the exact path you just wrote
+              df4 = pd.read_csv('data/parquet/predictions_2025-11-16_4318488430611622696.csv')  # or the exact path you just wrote
+
+
               cfg = BroadcastConfig(
               backend='supabase',
               supabase_url=os.environ['SUPABASE_URL'],
@@ -48,4 +55,7 @@ jobs:
               supabase_table='predictions',
               upsert_on=['date','player_id','target'])
               publish_results(df, cfg)
+              publish_results(df2, cfg)
+              publish_results(df3, cfg)
+              publish_results(df4, cfg)
               PY

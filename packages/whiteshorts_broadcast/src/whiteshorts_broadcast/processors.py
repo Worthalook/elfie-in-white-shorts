@@ -406,7 +406,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     #----------------------------------------
     print(f"\n=== DEFAULT_PIPELINE COUNT 2 OF DF ROWS {len(df2)}===")
 
-    df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.2, 20), "q10": (0, 20), "q90": (0.5, 20)})
+    df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.2, 20), "q90": (0, 5)})
     print(f"\n=== DEFAULT_PIPELINE COUNT 3 OF DF ROWS {len(df2)}===")
 
     df2  =apply_elfies_topk_pipeline(
@@ -420,7 +420,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         keep_ties=getattr(cfg, "elfies_keep_ties", False),
     )
     
-    df2 = filter_columns_by_range(df2, {"elfies_number": (0.1, 3)})
+    df2 = filter_columns_by_range(df2, {"elfies_number": (0.22, 5)})
     print(f"\n=== DEFAULT_PIPELINE COUNT 4 OF DF ROWS {len(df2)}===")
 
     df2 = nullify_non_finite(df2)     # <- critical for JSON

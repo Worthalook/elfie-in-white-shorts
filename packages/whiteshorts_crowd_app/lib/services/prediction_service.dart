@@ -25,12 +25,14 @@ class PredictionService {
     return list;
   }
 
+//today is -1 (U.S time)
   Future<List<BroadcastPrediction>> fetchToday() {
-    return fetchByDate(DateTime.now());
+    return fetchByDate(DateTime.now().subtract(const Duration(days: 1)));
   }
+  
 
   Future<List<BroadcastPrediction>> fetchYesterday() {
-    return fetchByDate(DateTime.now().subtract(const Duration(days: 1)));
+    return fetchByDate(DateTime.now().subtract(const Duration(days: 2)));
   }
 
   Future<void> updateCrowdScore(BroadcastPrediction prediction, int delta) async {

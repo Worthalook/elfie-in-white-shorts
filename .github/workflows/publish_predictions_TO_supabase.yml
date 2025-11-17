@@ -2,8 +2,8 @@ name: Publish predictions to Supabase
 
 on:
   
-    push:
-       branches: ["development"]
+    #push:
+       #branches: ["development"]
 
     workflow_dispatch: {}
 

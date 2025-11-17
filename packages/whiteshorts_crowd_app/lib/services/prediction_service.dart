@@ -18,7 +18,7 @@ class PredictionService {
         .eq('date', dateStr)
         //.order('team', ascending: false)
         .order('actual_points', ascending: false)
-        .order('elfies_number',ascending: true);
+        .order('elfies_number',ascending: false);
 
     final list = (response as List)
         .map((row) => BroadcastPrediction.fromJson(row as Map<String, dynamic>))

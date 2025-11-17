@@ -194,9 +194,7 @@ jobs:
               from whiteshorts_broadcast import publish_results, BroadcastConfig, find_latest_csv
               csv_path = find_latest_csv("data/parquet/predictions_*.csv") 
 
-              df1 = pd.read_csv(find_latest_csv('data/parquet/predictions_2025-11-13_*.csv')) #csv_path
-              df2 = pd.read_csv(find_latest_csv('data/parquet/predictions_2025-11-14_*.csv'))
-              df3 = pd.read_csv(find_latest_csv('data/parquet/predictions_2025-11-15_*.csv'))
+              df1 = pd.read_csv(find_latest_csv('data/parquet/predictions_2025-11-16_*.csv')) #csv_path
               
               cfg = BroadcastConfig(
               backend='supabase',
@@ -206,8 +204,7 @@ jobs:
               upsert_on=['date','player_id','target'])
               
               publish_results(df1, cfg)
-              publish_results(df2, cfg)
-              publish_results(df3, cfg)
+              
 
 
               PY

@@ -362,8 +362,8 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = df.copy()
     #df2 = df2.where(
     df2 = normalize_columns(df2, cfg.rename_map)
-    df2 = normalize_player_id(df2, "player_id")
-    df2 = normalize_player_id(df2, "PlayerID")
+    #df2 = normalize_player_id(df2, "player_id")
+    #df2 = normalize_player_id(df2, "PlayerID")
     #df2 = coerce_types(df2)
     df2 = normalize_dates(df2)
     
@@ -435,7 +435,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     print(f"\n=== DEFAULT_PIPELINE COUNT OF DF ROWS {len(df2)}===")
     print("\n=== DEFAULT_PIPELINE FINAL DF ROWS ===")
     for index, row in df2.iterrows():
-        n = row["name"]
+        n = row["player_id"]
         d = row["date"]
         print(f"Name: - {n}, date: {d}")
     print("========================================\n")

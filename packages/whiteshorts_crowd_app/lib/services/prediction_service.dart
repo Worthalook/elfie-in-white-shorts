@@ -18,7 +18,7 @@ class PredictionService {
         .eq('date', dateStr)
         .order('actual_points', ascending: false)
         .order('elfies_number',ascending: false)
-        .order('notPlaying', ascending: true);
+        .order('flag_not_playing', ascending: true);
 
 
     final list = (response as List)

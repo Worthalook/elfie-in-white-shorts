@@ -47,11 +47,18 @@ class PredictionCard extends StatelessWidget {
     final actual = prediction.actualPoints;
     final bool hasActual = actual != null;
     final bool isPositive = hasActual && actual! > 0;
+    final bool isFlag = !_flagsLabel().contains("none");
 
     final actualStyle = TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.bold,
       color: isPositive ? Colors.greenAccent : cs.onSurfaceVariant,
+    );
+
+    final flagsStyle = TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.bold,
+      color: Colors.redAccent,
     );
 
     return Card(
@@ -108,7 +115,7 @@ class PredictionCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    ' ?Actual: ${hasActual ? actual!.toStringAsFixed(1) : "-"}',
+                    'Actual: ${hasActual ? actual!.toStringAsFixed(1) : "-"}',
                     style: actualStyle,
                   ),
                   const SizedBox(height: 4),
@@ -122,9 +129,9 @@ class PredictionCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     _flagsLabel(),
-                    style: TextStyle(
+                    style: isFlag ? flagsStyle : TextStyle(
                       fontSize: 13,
-                      color: cs.tertiary,
+                      color: cs.onSurfaceVariant,
                     ),
                   ),
                 ],

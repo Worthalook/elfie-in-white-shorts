@@ -16,9 +16,10 @@ class PredictionService {
         .from('predictions_for_broadcast')
         .select()
         .eq('date', dateStr)
-        //.order('team', ascending: false)
         .order('actual_points', ascending: false)
-        .order('elfies_number',ascending: false);
+        .order('elfies_number',ascending: false)
+        .order('notPlaying', ascending: true);
+
 
     final list = (response as List)
         .map((row) => BroadcastPrediction.fromJson(row as Map<String, dynamic>))

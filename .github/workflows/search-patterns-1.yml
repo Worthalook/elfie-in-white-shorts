@@ -31,7 +31,7 @@ jobs:
           pip install pandas numpy scikit-learn plotly supabase tabulate
 
       - name: Run WhiteShorts pattern miner
-        envq :
+        env :
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}  # ensure this secret exists
         run: |

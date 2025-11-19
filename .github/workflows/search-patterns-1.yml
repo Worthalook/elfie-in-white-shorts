@@ -1,0 +1,47 @@
+name: search-patterns-1
+
+on:
+  # Manual run
+  workflow_dispatch: {}
+
+  # Optional: run once daily (15:00 UTC)
+  # Adjust or remove this if you don't want a schedule
+  schedule:
+    - cron: "0 15 * * *"
+
+jobs:
+  search-patterns-1:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python for pattern miner
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pattern miner dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy scikit-learn plotly supabase-py
+
+      - name: Run WhiteShorts pattern miner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}  # ensure this secret exists
+        run: |
+          python src/white_shorts/analysis/ws_pattern_miner.py \
+            --table predictions_for_broadcast \
+            --output-dir ws_pattern_output \
+            --min-n 30
+
+      - name: Upload pattern miner artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ws-pattern-report
+          path: ws_pattern_output/
+          if-no-files-found: warn

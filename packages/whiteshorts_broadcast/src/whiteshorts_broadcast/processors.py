@@ -394,7 +394,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         {
             "lambda_or_mu": (0.5, 20),
             #"q10": (0.01, 20),
-            "q90": (0.5, 20),
+            "q90": (0.2, 20),
         },
     )
     print(f"\n=== DEFAULT_PIPELINE COUNT 1 OF DF ROWS {len(df2)}===")

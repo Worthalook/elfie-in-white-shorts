@@ -262,14 +262,29 @@ def fit_logistic_models(X: pd.DataFrame, y: pd.DataFrame):
     coef_tables = {}
 
     for col in ["is_1_plus", "is_2_plus"]:
+        y_col = y[col]
+        unique_classes = np.unique(y_col)
+
+        if unique_classes.shape[0] < 2:
+            # Only one class present – can't fit logistic regression
+            print(f"[warn] Logistic target '{col}' has only one class ({unique_classes[0]}). Skipping LR fit.")
+            coef_tables[col] = pd.DataFrame({
+                "feature": X.columns,
+                "coef": np.zeros(len(X.columns)),
+                "odds_ratio": np.ones(len(X.columns)),
+            })
+            models[col] = None
+            continue
+
         lr = LogisticRegression(
             penalty="l2",
             C=1.0,
             max_iter=500,
             solver="lbfgs",
         )
-        lr.fit(X, y[col])
+        lr.fit(X, y_col)
         models[col] = lr
+
         coef = pd.DataFrame(
             {
                 "feature": X.columns,
@@ -280,7 +295,6 @@ def fit_logistic_models(X: pd.DataFrame, y: pd.DataFrame):
         coef_tables[col] = coef
 
     return models, coef_tables
-
 
 def fit_decision_tree(
     X: pd.DataFrame,
@@ -459,12 +473,16 @@ def main():
     save_csv(coef_2, out_dir / "logistic_features_2_plus.csv")
 
     # tree for 2+ points rules (optional but handy)
-    tree = fit_decision_tree(X, y["is_2_plus"])
-    rules_txt = export_text(tree, feature_names=list(X.columns))
-    rules_path = out_dir / "tree_rules_2_plus.txt"
-    with open(rules_path, "w", encoding="utf-8") as f:
-        f.write(rules_txt)
-    print(f"[write] {rules_path}")
+    # tree for 2+ points rules (optional but handy)
+    if y["is_2_plus"].nunique() < 2:
+        print("[warn] is_2_plus has only one class; skipping decision tree rules.")
+    else:
+        tree = fit_decision_tree(X, y["is_2_plus"])
+        rules_txt = export_text(tree, feature_names=list(X.columns))
+        rules_path = out_dir / "tree_rules_2_plus.txt"
+        with open(rules_path, "w", encoding="utf-8") as f:
+            f.write(rules_txt)
+        print(f"[write] {rules_path}")
 
     # HTML Plotly report + Markdown summary
     create_html_report(out_dir, patterns_1, patterns_2, coef_1, coef_2)

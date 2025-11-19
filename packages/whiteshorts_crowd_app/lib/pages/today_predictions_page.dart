@@ -98,19 +98,16 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
     );
 
     if (result == true) {
-      await _service.updateFlags(prediction, gameTotal: gameTotal, injury: injury, notPlaying: notPlaying);
+      await _service.updateFlags(
+        prediction,
+        gameTotal: gameTotal,
+        injury: injury,
+        notPlaying: notPlaying,
+      );
+
+      // Re-fetch from Supabase and let the service re-apply the sort
       setState(() {
-        _future = _future.then((list) {
-          return list
-              .map((p) => p.id == prediction.id
-                  ? p.copyWith(
-                      crowdFlagGameTotal: gameTotal,
-                      crowdFlagInjury: injury,
-                      notPlaying: notPlaying
-                    )
-                  : p)
-              .toList();
-        });
+        _future = _service.fetchToday();
       });
     }
   }

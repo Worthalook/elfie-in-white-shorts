@@ -10,22 +10,50 @@ class PredictionService {
   PredictionService() : _client = AppSupabase.client;
 
   Future<List<BroadcastPrediction>> fetchByDate(DateTime date) async {
-    final dateStr = DateFormat('yyyy-MM-dd').format(date);
+  final dateStr = DateFormat('yyyy-MM-dd').format(date);
 
-    final response = await _client
-        .from('predictions_for_broadcast')
-        .select()
-        .eq('date', dateStr)
-        //.order('team', ascending: false)
-        .order('actual_points', ascending: false)
-        .order('elfies_number',ascending: false);
+  // 1) Fetch without complex ordering; keep SQL simple
+  final response = await _client
+      .from('predictions_for_broadcast')
+      .select()
+      .eq('date', dateStr);
 
-    final list = (response as List)
-        .map((row) => BroadcastPrediction.fromJson(row as Map<String, dynamic>))
-        .toList();
+  final list = (response as List)
+      .map((row) => BroadcastPrediction.fromJson(row as Map<String, dynamic>))
+      .toList();
 
-    return list;
-  }
+  // 2) Apply custom sort in service layer:
+  //    - flag_not_playing == true → bottom
+  //    - then actual_points DESC
+  //    - then elfies_number DESC
+  list.sort((a, b) {
+    final aFlag = a.notPlaying == true;
+    final bFlag = b.notPlaying == true;
+
+    // First: push "not playing" items to bottom
+    if (aFlag && !bFlag) return 1;   // a goes down
+    if (!aFlag && bFlag) return -1;  // b goes down
+
+    // Second: sort by actual_points DESC
+    final aPoints = a.actualPoints ?? -double.infinity;
+    final bPoints = b.actualPoints ?? -double.infinity;
+    if (aPoints != bPoints) {
+      return bPoints.compareTo(aPoints); // highest first
+    }
+
+    // Third: sort by elfies_number DESC
+    final aElf = a.elfiesNumber ?? -double.infinity;
+    final bElf = b.elfiesNumber ?? -double.infinity;
+    if (aElf != bElf) {
+      return bElf.compareTo(aElf); // highest first
+    }
+
+    // Optional: stable fallback (e.g. by name)
+    return (a.name ?? '').compareTo(b.name ?? '');
+  });
+
+  return list;
+}
 
 //today is -1 (U.S time)
   Future<List<BroadcastPrediction>> fetchToday() {

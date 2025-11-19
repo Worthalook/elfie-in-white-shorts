@@ -6,8 +6,8 @@ on:
 
   # Optional: run once daily (15:00 UTC)
   # Adjust or remove this if you don't want a schedule
-  schedule:
-    - cron: "0 15 * * *"
+  #schedule:
+  #  - cron: "0 15 * * *"
 
 jobs:
   search-patterns-1:

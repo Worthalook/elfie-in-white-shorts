@@ -3,7 +3,8 @@ name: search-patterns-1
 on:
   # Manual run
   workflow_dispatch: {}
-
+  push:
+    branches: [ "development" ]
   # Optional: run once daily (15:00 UTC)
   # Adjust or remove this if you don't want a schedule
   #schedule:

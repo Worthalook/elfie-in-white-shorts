@@ -40,7 +40,7 @@ jobs:
               from whiteshorts_broadcast import publish_results, BroadcastConfig, find_latest_csv
               #csv_path = find_latest_csv("data/parquet/predictions_*.csv") 
 
-              df = pd.read_csv('data/parquet/predictions_2025-11-12_3042149801056478282.csv')  # or the exact path you just wrote
+              df = pd.read_csv('data/parquet/predictions_2025-11-18_3644645151388137361.csv')  # or the exact path you just wrote
               cfg = BroadcastConfig(
               backend='supabase',
               supabase_url=os.environ['SUPABASE_URL'],

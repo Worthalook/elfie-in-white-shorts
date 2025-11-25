@@ -237,7 +237,7 @@ def apply_elfies_topk_pipeline(
     q90_col: str = "q90",
     team_col: str = "team",
     out_col: str = "elfies_number",
-    top_k: int = 4,
+    top_k: int = 8,
     keep_ties: bool = False,
 ) -> pd.DataFrame:
     """

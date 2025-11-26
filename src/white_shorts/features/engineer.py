@@ -73,13 +73,89 @@ def add_goalie_signal(df: pd.DataFrame) -> pd.DataFrame:
     out["opp_goalie_ga_smooth"] = out["opp_goalie_ga_smooth"].fillna(0.0)
     return out
 
+def _add_form_features(
+    df: pd.DataFrame,
+    short_window: int = 5,
+    long_window: int = 20,
+) -> pd.DataFrame:
+    """
+    Add "form" / residual-like features so the model can see when a player
+    has been recently under- or over-performing relative to their longer-term
+    baseline.
+
+    All features are shifted by 1 game so they only use information that would
+    have been available BEFORE the current game.
+    """
+    required = {"player_id", "date", "points"}
+    if not required.issubset(df.columns):
+        return df
+
+    df = df.sort_values(["player_id", "date"])
+    grouped = df.groupby("player_id", group_keys=False)
+
+    def _per_player(g: pd.DataFrame) -> pd.DataFrame:
+        pts = pd.to_numeric(g["points"], errors="coerce").fillna(0.0)
+
+        # Short- and long-term rolling means (shifted to be pre-game)
+        roll_short = pts.rolling(short_window, min_periods=1).mean().shift(1)
+        roll_long  = pts.rolling(long_window,  min_periods=1).mean().shift(1)
+
+        g["form_points_short_mean"] = roll_short
+        g["form_points_long_mean"]  = roll_long
+
+        # Ratio & difference: "how hot/cold is recent form vs baseline?"
+        denom = roll_long.replace(0.0, np.nan)
+        g["form_points_ratio_short_over_long"] = (
+            (roll_short / denom).replace([np.inf, -np.inf], np.nan)
+        )
+        g["form_points_diff_short_minus_long"] = roll_short - roll_long
+
+        # Games since last point (simple slump length)
+        games_since_last: list[int] = []
+        since = 0
+        for v in pts:
+            games_since_last.append(since)
+            if v > 0:
+                since = 0
+            else:
+                since = 1
+        g["games_since_last_point"] = games_since_last
+
+        return g
+
+    df = grouped.apply(_per_player).reset_index(drop=True)
+    return df
+
+
 def engineer_minimal(df: pd.DataFrame) -> pd.DataFrame:
-    out = add_days_off(df)
-    out = add_rolling(out)
-    out = add_goalie_signal(out)
-    # ensure all TEAM_FEATURES exist, even if upstream sparse
-    for c in TEAM_FEATURES:
-        if c not in out.columns:
-            out[c] = 0.0
-    out[TEAM_FEATURES] = out[TEAM_FEATURES].fillna(0.0)
+    """
+    Minimal feature set used by the QRF player model.
+    Assumes df has columns: date, player_id, team, opponent, points, goals,
+    assists, shots_on_goal, etc.
+    """
+    out = df.copy()
+    out = out.sort_values(["player_id", "date"])
+
+    g = out.groupby("player_id", group_keys=False)
+
+    # --- existing rolling/base features (adapt to your real code) ---
+    out["roll_points_5"] = (
+        g["points"]
+        .rolling(5, min_periods=1)
+        .mean()
+        .reset_index(level=0, drop=True)
+        .shift(1)
+    )
+    out["roll_points_20"] = (
+        g["points"]
+        .rolling(20, min_periods=1)
+        .mean()
+        .reset_index(level=0, drop=True)
+        .shift(1)
+    )
+    # ... your other existing features ...
+
+    # --- NEW: form / residual-style features ---
+    out = _add_form_features(out, short_window=5, long_window=20)
+
     return out

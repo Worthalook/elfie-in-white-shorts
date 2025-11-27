@@ -13,9 +13,22 @@ class ModelBundle:
     model_name: str
     model_version: str
 
-def train_player_qrf(df: pd.DataFrame, features: list[str], target: str, version: str = "0.3.0") -> ModelBundle:
+def train_player_qrf(
+    df: pd.DataFrame,
+    features: list[str],
+    target: str,
+    version: str = "0.3.0",
+) -> ModelBundle:
+    # Features matrix
     X = df[features].fillna(0)
-    y = df[target].astype(float)
+
+    # Target vector: ensure numeric
+    y_series = pd.to_numeric(df[target], errors="coerce")
+    mask = y_series.notna()
+
+    X = X.loc[mask]
+    y = y_series.loc[mask].astype(float)
+
     rf = RandomForestRegressor(
         n_estimators=600,
         max_depth=None,
@@ -25,6 +38,7 @@ def train_player_qrf(df: pd.DataFrame, features: list[str], target: str, version
         bootstrap=True,
     )
     rf.fit(X, y)
+
     return ModelBundle(
         model=rf,
         features=features,

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import List
 import numpy as np
 import pandas as pd
+import typer
 from sklearn.ensemble import RandomForestRegressor
 
 @dataclass

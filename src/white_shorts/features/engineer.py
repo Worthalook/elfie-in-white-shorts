@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 import pandas as pd
 
 TEAM_FEATURES = [
@@ -150,36 +150,88 @@ def _add_form_features(
 
 
 
+import pandas as pd
+import numpy as np
+
 def engineer_minimal(df: pd.DataFrame) -> pd.DataFrame:
     """
     Minimal feature set used by the QRF player model.
-    Assumes df has columns: date, player_id, team, opponent, points, goals,
-    assists, shots_on_goal, etc.
+
+    Assumes df has at least:
+      - player_id
+      - date
+      - points, goals, assists, shots_on_goal
+      - home_or_away, minutes, days_off, etc.
     """
+
     out = df.copy()
+
+    # --- 1) Force critical numeric columns to be numeric, not categorical/strings ---
+    for col in ["points", "goals", "assists", "shots_on_goal", "minutes", "days_off"]:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce")
+
+    # Optional: normalise home_or_away here too (0/1) so it never becomes a weird category
+    if "home_or_away" in out.columns:
+        s = out["home_or_away"].astype(str).str.lower()
+        # map common variants; anything unknown → NaN → fill with 0
+        out["home_or_away"] = (
+            s.map({"home": 1, "h": 1, "1": 1, "away": 0, "a": 0, "0": 0})
+             .fillna(0)
+             .astype("int8")
+        )
+
+    # --- 2) Robust date normalisation just for ordering ---
+    if "date" in out.columns:
+        out["date"] = pd.to_datetime(out["date"], errors="coerce")
+
+    # --- 3) Sort by player + date now that dtypes are clean ---
     out = out.sort_values(["player_id", "date"])
 
     g = out.groupby("player_id", group_keys=False)
 
-    # --- existing rolling/base features (adapt to your real code) ---
-    out["roll_points_5"] = (
-        g["points"]
-        .rolling(5, min_periods=1)
-        .mean()
-        .reset_index(level=0, drop=True)
-        .shift(1)
-    )
-    out["roll_points_20"] = (
-        g["points"]
-        .rolling(20, min_periods=1)
-        .mean()
-        .reset_index(level=0, drop=True)
-        .shift(1)
-    )
-    # ... your other existing features ...
+    # --- 4) Your existing rolling/base features ---
+    # Example for points/goals/assists/SOG; adapt exactly to your current code.
+    if "points" in out.columns:
+        out["rolling_points_5"] = (
+            g["points"]
+            .rolling(5, min_periods=1)
+            .mean()
+            .reset_index(level=0, drop=True)
+            .shift(1)
+        )
 
-    # --- NEW: form / residual-style features ---
-    df_feat = engineer_minimal(df_raw)
-    out = _add_form_features(df_feat, short_window=5, long_window=20)
+    if "goals" in out.columns:
+        out["rolling_goals_5"] = (
+            g["goals"]
+            .rolling(5, min_periods=1)
+            .mean()
+            .reset_index(level=0, drop=True)
+            .shift(1)
+        )
+
+    if "assists" in out.columns:
+        out["rolling_assists_5"] = (
+            g["assists"]
+            .rolling(5, min_periods=1)
+            .mean()
+            .reset_index(level=0, drop=True)
+            .shift(1)
+        )
+
+    if "shots_on_goal" in out.columns:
+        out["rolling_shots_on_goal_5"] = (
+            g["shots_on_goal"]
+            .rolling(5, min_periods=1)
+            .mean()
+            .reset_index(level=0, drop=True)
+            .shift(1)
+        )
+
+    # ... whatever you already do for opp_goalie_ga_smooth, team_gf_5, team_ga_5 ...
+
+    # If you already wired in the form features, keep that call **after**
+    # we’ve coerced base stats to numeric:
+    # out = _add_form_features(out, short_window=5, long_window=20)
 
     return out

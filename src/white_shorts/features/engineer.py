@@ -73,6 +73,7 @@ def add_goalie_signal(df: pd.DataFrame) -> pd.DataFrame:
     out["opp_goalie_ga_smooth"] = out["opp_goalie_ga_smooth"].fillna(0.0)
     return out
 
+
 def _add_form_features(
     df: pd.DataFrame,
     short_window: int = 5,
@@ -85,13 +86,30 @@ def _add_form_features(
 
     All features are shifted by 1 game so they only use information that would
     have been available BEFORE the current game.
+
+    This version is robust to whatever 'date' dtype you have (string, datetime,
+    tz-aware, etc.) and won't blow up on timestamp comparisons.
     """
     required = {"player_id", "date", "points"}
     if not required.issubset(df.columns):
         return df
 
-    df = df.sort_values(["player_id", "date"])
-    grouped = df.groupby("player_id", group_keys=False)
+    df2 = df.copy()
+
+    # --- Robust date normalisation for ordering ---
+    # Coerce to datetime (tz-naive), then to int64 "ordinal" for sorting.
+    date_norm = pd.to_datetime(df2["date"], errors="coerce")
+    # If there are tz-aware datetimes, convert to naive UTC or local;
+    # here we just drop tz and treat them uniformly.
+    if getattr(date_norm.dt, "tz", None) is not None:
+        date_norm = date_norm.dt.tz_convert("UTC").dt.tz_localize(None)
+
+    df2["_date_ord"] = date_norm.view("int64")  # NaT will become the same sentinel, but that's fine
+
+    # Sort by player + date ordinal; this avoids direct timestamp comparisons
+    df2 = df2.sort_values(["player_id", "_date_ord"])
+
+    grouped = df2.groupby("player_id", group_keys=False)
 
     def _per_player(g: pd.DataFrame) -> pd.DataFrame:
         pts = pd.to_numeric(g["points"], errors="coerce").fillna(0.0)
@@ -118,13 +136,18 @@ def _add_form_features(
             if v > 0:
                 since = 0
             else:
-                since = 1
+                since += 1
         g["games_since_last_point"] = games_since_last
 
         return g
 
-    df = grouped.apply(_per_player).reset_index(drop=True)
-    return df
+    df2 = grouped.apply(_per_player).reset_index(drop=True)
+
+    # Clean up helper column
+    df2 = df2.drop(columns=["_date_ord"])
+
+    return df2
+
 
 
 def engineer_minimal(df: pd.DataFrame) -> pd.DataFrame:
@@ -156,6 +179,7 @@ def engineer_minimal(df: pd.DataFrame) -> pd.DataFrame:
     # ... your other existing features ...
 
     # --- NEW: form / residual-style features ---
-    out = _add_form_features(out, short_window=5, long_window=20)
+    df_feat = engineer_minimal(df_raw)
+    out = _add_form_features(df_feat, short_window=5, long_window=20)
 
     return out

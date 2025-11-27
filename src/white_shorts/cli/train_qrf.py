@@ -243,6 +243,45 @@ def _train_one(df_feat: pd.DataFrame, target: str, version: str = "0.3.0") -> st
     path = save_qrf(bundle)
     return path
 
+import pandas as pd
+from pandas.api.types import is_categorical_dtype
+
+def _normalize_feature_dtypes(df: pd.DataFrame, feature_cols: list[str]) -> pd.DataFrame:
+    """
+    Ensure model features are not pandas Categoricals that can break
+    min/max/quantile/describe with 'values is not ordered' errors.
+    """
+    df2 = df.copy()
+    for col in feature_cols:
+        if col not in df2.columns:
+            continue
+        s = df2[col]
+
+        # If it's categorical, convert to string or numeric as appropriate.
+        if is_categorical_dtype(s):
+            # If it's basically a binary home/away flag, map to 0/1.
+            if col == "home_or_away":
+                # Try to map to numeric if possible, otherwise keep as string
+                s_str = s.astype(str).str.lower()
+                df2[col] = (
+                    s_str.map({"home": 1, "away": 0})
+                    .fillna(0)
+                    .astype("int8")
+                )
+            else:
+                # Default: keep as plain string, which is safe for describe/min/max
+                df2[col] = s.astype(str)
+
+        # If it's an object but should be numeric, coerce
+        elif s.dtype == "object":
+            try:
+                df2[col] = pd.to_numeric(s, errors="ignore")
+            except Exception:
+                # If coercion fails, leave as is
+                pass
+
+    return df2
+
 
 @app.command()
 def all(
@@ -270,6 +309,10 @@ def all(
     # Feature engineering (your existing minimal pipeline)
     df_feat = engineer_minimal(df_raw)
 
+    #--------------------------------------------------
+    df_feat = _normalize_feature_dtypes(df_feat, PLAYER_FEATURES)
+   
+    #---------------------------------------------------
     results = {}
     for tgt in _TARGETS:
         path = _train_one(df_feat, tgt, version=version)

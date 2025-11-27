@@ -239,24 +239,10 @@ def _assemble_training_frame(
 # ----------------------------
 
 def _train_one(df_feat: pd.DataFrame, target: str, version: str = "0.3.0") -> str:
-    # Work on a copy in case downstream mutates
-    df_t = df_feat.copy()
-
-    # Figure out which feature columns are actually present
-    feature_cols = [c for c in PLAYER_FEATURES if c in df_t.columns]
-    missing = sorted(set(PLAYER_FEATURES) - set(feature_cols))
-    if missing:
-        typer.echo(
-            f"[WARN] Missing feature columns for {target}: {missing}",
-            err=True,
-        )
-
-    if not feature_cols:
-        raise ValueError(f"No usable feature columns for target={target}")
-
-    bundle = train_player_qrf(df_t, feature_cols, target=target, version=version)
+    bundle = train_player_qrf(df_feat, PLAYER_FEATURES, target=target, version=version)
     path = save_qrf(bundle)
     return path
+
 
 
 import pandas as pd

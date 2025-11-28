@@ -35,8 +35,8 @@ class PredictionService {
     if (!aFlag && bFlag) return -1;  // b goes down
 
     // Second: sort by actual_points DESC
-    final aPoints = a.crowd_flag_game_total ?? -double.infinity;
-    final bPoints = b.crowd_flag_game_total ?? -double.infinity;
+    final aPoints = a.gameTotal ?? -double.infinity;
+    final bPoints = b.gameTotal ?? -double.infinity;
     if (aPoints != bPoints) {
       return bPoints.compareTo(aPoints); // highest first
     }

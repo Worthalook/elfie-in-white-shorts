@@ -1,4 +1,4 @@
-name: WS daily pipeline (AET)
+name: WS BUILD APP
 
 on:
   push:

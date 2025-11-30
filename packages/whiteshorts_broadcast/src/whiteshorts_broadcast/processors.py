@@ -412,7 +412,7 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     #----------------------------------------
     print(f"\n=== DEFAULT_PIPELINE COUNT 2 OF DF ROWS {len(df2)}===")
 
-    df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.1, 20), "q90": (0, 5)})
+    df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.01, 20), "q90": (0, 5)})
     print(f"\n=== DEFAULT_PIPELINE COUNT 3 OF DF ROWS {len(df2)}===")
 
     df2  =apply_elfies_topk_pipeline(

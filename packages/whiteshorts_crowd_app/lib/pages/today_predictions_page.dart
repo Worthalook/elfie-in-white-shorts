@@ -30,7 +30,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
     // For now, default to "yesterday" as in your original code (1 day back).
     final now = DateTime.now();
     _selectedDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
-    _historicalDays = 1;
+    _historicalDays = 0;
 
     _future = _service.fetchToday(_historicalDays);
   }

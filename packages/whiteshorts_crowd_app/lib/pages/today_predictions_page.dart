@@ -42,7 +42,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
   }
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
+    final now = DateTime.now().subtract(const Duration(days: 1)); //latest (yesterday in U.S)
     final initial = _selectedDate;
     final firstDate = now.subtract(const Duration(days: 30)); // last 30 days
     final lastDate = now;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../models/broadcast_prediction.dart';
 import '../services/prediction_service.dart';
@@ -8,8 +9,7 @@ class TodayPredictionsPage extends StatefulWidget {
   const TodayPredictionsPage({super.key});
 
   @override
-  State<TodayPredictionsPage> createState() =>
-      _TodayPredictionsPageState();
+  State<TodayPredictionsPage> createState() => _TodayPredictionsPageState();
 }
 
 class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
@@ -18,13 +18,56 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
   String? _selectedTeam;
   String? _selectedTarget;
 
+  // New: selected date + historical days offset
+  late DateTime _selectedDate;
+  late int _historicalDays;
+
   @override
   void initState() {
     super.initState();
-    //'NOTES for historical mode' this should be nowDate - some number of historical days.
-    //Taken from a datetime picker or some other simple way to pick a day in the last few weeks 
-    int historicalDays = 1;
-    _future = _service.fetchToday(historicalDays);
+
+    // 'NOTES for historical mode' this should be nowDate - some number of historical days.
+    // For now, default to "yesterday" as in your original code (1 day back).
+    final now = DateTime.now();
+    _selectedDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+    _historicalDays = 1;
+
+    _future = _service.fetchToday(_historicalDays);
+  }
+
+  void _refreshForSelectedDate() {
+    setState(() {
+      _future = _service.fetchToday(_historicalDays);
+    });
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final initial = _selectedDate;
+    final firstDate = now.subtract(const Duration(days: 30)); // last 30 days
+    final lastDate = now;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial.isBefore(firstDate) || initial.isAfter(lastDate)
+          ? lastDate
+          : initial,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+
+    if (picked == null) return;
+
+    final today = DateTime(now.year, now.month, now.day);
+    final pickedDay = DateTime(picked.year, picked.month, picked.day);
+    int days = today.difference(pickedDay).inDays;
+    if (days < 0) days = 0;
+
+    setState(() {
+      _selectedDate = pickedDay;
+      _historicalDays = days;
+      _future = _service.fetchToday(_historicalDays);
+    });
   }
 
   Future<void> _handleVote(BroadcastPrediction prediction, int delta) async {
@@ -108,9 +151,9 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
         notPlaying: notPlaying,
       );
 
-      // Re-fetch from Supabase and let the service re-apply the sort
+      // Re-fetch for the currently selected historical date
       setState(() {
-        _future = _service.fetchToday();
+        _future = _service.fetchToday(_historicalDays);
       });
     }
   }
@@ -141,60 +184,75 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
     }.toList()
       ..sort();
 
+    final dateLabel = DateFormat('yyyy-MM-dd').format(_selectedDate);
+
     return Card(
       color: cs.surfaceContainerHighest,
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Padding(
         padding: const EdgeInsets.all(8),
-        child: Row(
+        child: Column(
           children: [
-            Expanded(
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: _selectedTeam,
-                hint: const Text('All teams'),
-                items: [
-                  const DropdownMenuItem<String>(
-                    value: null,
-                    child: Text('All teams'),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: _selectedTeam,
+                    hint: const Text('All teams'),
+                    items: [
+                      const DropdownMenuItem<String>(
+                        value: null,
+                        child: Text('All teams'),
+                      ),
+                      ...teams.map(
+                        (t) => DropdownMenuItem<String>(
+                          value: t,
+                          child: Text(t),
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedTeam = value;
+                      });
+                    },
                   ),
-                  ...teams.map(
-                    (t) => DropdownMenuItem<String>(
-                      value: t,
-                      child: Text(t),
-                    ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: _selectedTarget,
+                    hint: const Text('All targets'),
+                    items: [
+                      const DropdownMenuItem<String>(
+                        value: null,
+                        child: Text('All targets'),
+                      ),
+                      ...targets.map(
+                        (t) => DropdownMenuItem<String>(
+                          value: t,
+                          child: Text(t),
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedTarget = value;
+                      });
+                    },
                   ),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedTeam = value;
-                  });
-                },
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: _selectedTarget,
-                hint: const Text('All targets'),
-                items: [
-                  const DropdownMenuItem<String>(
-                    value: null,
-                    child: Text('All targets'),
-                  ),
-                  ...targets.map(
-                    (t) => DropdownMenuItem<String>(
-                      value: t,
-                      child: Text(t),
-                    ),
-                  ),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedTarget = value;
-                  });
-                },
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _pickDate,
+                icon: const Icon(Icons.calendar_today),
+                label: Text('Date: $dateLabel'),
               ),
             ),
           ],

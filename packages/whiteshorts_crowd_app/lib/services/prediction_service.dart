@@ -55,9 +55,11 @@ class PredictionService {
   return list;
 }
 
-//today is -1 (U.S time)
-  Future<List<BroadcastPrediction>> fetchToday() {
-    return fetchByDate(DateTime.now().subtract(const Duration(days: 1)));
+//the day which is now - no. of historical days requested
+  Future<List<BroadcastPrediction>> fetchToday(int daysBack) {
+    daysBack += 1; //today
+  
+    return fetchByDate(DateTime.now().subtract(const Duration(days: daysBack)));
   }
   
 

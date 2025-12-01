@@ -21,7 +21,10 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
   @override
   void initState() {
     super.initState();
-    _future = _service.fetchToday();
+    //'NOTES for historical mode' this should be nowDate - some number of historical days.
+    //Taken from a datetime picker or some other simple way to pick a day in the last few weeks 
+    int historicalDays = 1;
+    _future = _service.fetchToday(historicalDays);
   }
 
   Future<void> _handleVote(BroadcastPrediction prediction, int delta) async {

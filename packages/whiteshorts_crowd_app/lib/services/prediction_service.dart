@@ -35,8 +35,8 @@ class PredictionService {
     if (!aFlag && bFlag) return -1;  // b goes down
 
     // Second: sort by actual_points DESC
-    final aPoints = a.crowdScore ?? -double.infinity;
-    final bPoints = b.crowdScore ?? -double.infinity;
+    final aPoints = a.crowdScore;
+    final bPoints = b.crowdScore;
     if (aPoints != bPoints) {
       return bPoints.compareTo(aPoints); // highest first
     }
@@ -56,10 +56,10 @@ class PredictionService {
 }
 
 //the day which is now - no. of historical days requested
-  Future<List<BroadcastPrediction>> fetchToday(int daysBack) {
-    daysBack += 1; //today
+  Future<List<BroadcastPrediction>> fetchToday(int historicalDays) {
+    historicalDays += 1; //today = now - 1 (U.S)
   
-    return fetchByDate(DateTime.now().subtract(const Duration(days: daysBack)));
+    return fetchByDate(DateTime.now().subtract(Duration(days: historicalDays)));
   }
   
 

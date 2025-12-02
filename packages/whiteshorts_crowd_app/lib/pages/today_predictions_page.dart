@@ -60,7 +60,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
 
     final today = DateTime(now.year, now.month, now.day);
     final pickedDay = DateTime(picked.year, picked.month, picked.day);
-    int days = today.subtract(const Duration(days: 1)).difference(pickedDay).inDays;
+    int days = today.difference(pickedDay).inDays;
     if (days < 0) days = 0;
 
     setState(() {

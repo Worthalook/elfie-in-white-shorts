@@ -64,7 +64,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
     if (days < 0) days = 0;
 
     setState(() {
-      _selectedDate = DateTime.now().subtract(const Duration(days: 1));
+      _selectedDate = pickedDay;
       _historicalDays = days;
       _future = _service.fetchToday(0);
     });

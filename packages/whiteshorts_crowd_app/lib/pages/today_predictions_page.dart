@@ -66,7 +66,7 @@ class _TodayPredictionsPageState extends State<TodayPredictionsPage> {
     setState(() {
       _selectedDate = pickedDay;
       _historicalDays = days;
-      _future = _service.fetchToday(0);
+      _future = _service.fetchToday(_historicalDays);
     });
   }
 

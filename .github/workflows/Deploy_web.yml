@@ -15,7 +15,9 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'  # choose your version
+            #flutter-version: '3.24.2'   # or omit to use latest stable
+            channel: 'stable'
+            cache: true # choose your version
 
       - name: Install dependencies
         working-directory: ./packages/whiteshorts_crowd_app

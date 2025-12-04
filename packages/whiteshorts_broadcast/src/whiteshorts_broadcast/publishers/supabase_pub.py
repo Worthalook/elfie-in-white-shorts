@@ -1,6 +1,11 @@
 # publishers/supabase_pub.py
 import requests, json, math
+import pandas as pd
 import numpy as np
+import re
+from collections import OrderedDict
+
+
 
 def _to_json_safe_value(v):
     # Convert numpy scalars to native
@@ -61,6 +66,29 @@ def _sanitize_rows(rows):
             changed.append({"row_index": i, "changed": ch})
     return clean, changed
 
+def normalize_player_id(df: pd.DataFrame, col="player_id") -> pd.DataFrame:
+    if col not in df.columns:
+        return df
+    # Work on a copy of the series to avoid chained-assign warnings
+    s = df[col].astype("string")               # pandas StringDtype (not object)
+    s = s.str.strip()                          # remove trailing spaces like '12678342 '
+    # Extract digits only (protect against '12678342.0', '0012678342', etc.)
+    s = s.str.extract(r"(\d+)$", expand=False)
+    # Guarantee string dtype and no floats sneak back in:
+    df[col] = s.astype("string")
+    return df
+
+def dedupe_by_keys(rows, key_fields):
+    """
+    Deduplicate list[dict] by key_fields.
+    Keeps the LAST row for each key tuple.
+    """
+    seen = OrderedDict()
+    for row in rows:
+        key = tuple(row.get(k) for k in key_fields)
+        seen[key] = row  # last write wins
+    return list(seen.values())
+
 class SupabasePublisher:
     def __init__(self, cfg):
         self.cfg = cfg
@@ -68,7 +96,8 @@ class SupabasePublisher:
     def publish(self, rows):
         if not rows:
             return
-
+        # rows = normalize_player_id(rows, "player_id")
+        #rows = normalize_player_id(rows, "PlayerID")
         # ---- sanitize & log diffs
         rows, diffs = _sanitize_rows(rows)
         if diffs:
@@ -82,9 +111,12 @@ class SupabasePublisher:
             "Content-Type": "application/json",
             "Prefer": "resolution=merge-duplicates,return=representation"
         }
-        keys = ",".join(self.cfg.upsert_on) if self.cfg.upsert_on else ""
+        key_fields = ["date", "game_id", "team", "player_id", "model_name"] 
+        rows = dedupe_by_keys(rows, key_fields)
+
+        # Build on_conflict query param
+        keys = ",".join(key_fields) if key_fields else ""
         q = f"?on_conflict={keys}" if keys else ""
-        #rows["player_id"] = rows["player_id"].astype(str).str.split('.').str[0]
 
         payload = json.dumps(rows, allow_nan=False)  # will fail if anything non-finite remains
 

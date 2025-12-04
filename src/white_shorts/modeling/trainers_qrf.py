@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import List
 import numpy as np
 import pandas as pd
+import typer
 from sklearn.ensemble import RandomForestRegressor
 
 @dataclass
@@ -13,9 +14,34 @@ class ModelBundle:
     model_name: str
     model_version: str
 
-def train_player_qrf(df: pd.DataFrame, features: list[str], target: str, version: str = "0.3.0") -> ModelBundle:
-    X = df[features].fillna(0)
-    y = df[target].astype(float)
+def train_player_qrf(
+    df: pd.DataFrame,
+    features: list[str],
+    target: str,
+    version: str = "0.3.0",
+) -> ModelBundle:
+    # Only keep features that actually exist in df
+    available = [f for f in features if f in df.columns]
+    missing = sorted(set(features) - set(available))
+
+    if missing:
+        typer.echo(
+            f"[WARN] Missing feature columns in train_player_qrf for target={target}: {missing}",
+            err=True,
+        )
+
+    if not available:
+        raise ValueError(f"No usable feature columns for target={target}")
+
+    # Features matrix
+    X = df[available].fillna(0)
+
+    # Target vector: ensure numeric
+    y_series = pd.to_numeric(df[target], errors="coerce")
+    mask = y_series.notna()
+    X = X.loc[mask]
+    y = y_series.loc[mask].astype(float)
+
     rf = RandomForestRegressor(
         n_estimators=600,
         max_depth=None,
@@ -25,13 +51,15 @@ def train_player_qrf(df: pd.DataFrame, features: list[str], target: str, version
         bootstrap=True,
     )
     rf.fit(X, y)
+
     return ModelBundle(
         model=rf,
-        features=features,
+        features=available,  # <- store the actual feature list used
         target=target,
         model_name=f"rf_qrf_{target}",
         model_version=version,
     )
+
 
 
 def qrf_predict_with_quantiles(bundle: ModelBundle, X: pd.DataFrame, q_low: float = 0.10, q_high: float = 0.90):

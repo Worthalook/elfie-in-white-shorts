@@ -125,15 +125,31 @@ def slate(
     df_feat_all["date"] = df_feat_all["date"].apply(_parse_date)
 
     # Take most recent snapshot per (player_id, team) for features
-    snap_cols = ["player_id", "team"] + [f for f in PLAYER_FEATURES]
     if "team" not in df_feat_all.columns:
         df_feat_all["team"] = pd.NA
+
     df_feat_all = df_feat_all.sort_values("date")
+
+    # Determine which feature columns are actually present
+    available_features = [f for f in PLAYER_FEATURES if f in df_feat_all.columns]
+    missing_features = sorted(set(PLAYER_FEATURES) - set(available_features))
+
+    if missing_features:
+        typer.echo(
+            f"[WARN] Missing feature columns in predict_from_slate: {missing_features}",
+            err=True,
+        )
+
+    # We always need at least player_id and team
+    base_cols = ["player_id", "team"]
+    snap_cols = base_cols + available_features
+
     last_feat = (
         df_feat_all
         .groupby(["player_id", "team"], as_index=False)
         .tail(1)[snap_cols]
     )
+
 
     # Merge features ONTO THE SLATE (inner semantics: keep only slate players)
     # Use left join (slate driven) but we will fill features later; output will remain strictly slate players.

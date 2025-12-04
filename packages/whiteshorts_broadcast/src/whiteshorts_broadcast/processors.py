@@ -159,35 +159,52 @@ def add_elfies_number(
 
 
 
-def top_k_per_team_by_score(
+import numpy as np
+import pandas as pd
+
+def top_k_per_team_by_score( 
     df: pd.DataFrame,
     *,
     team_col: str = "team",
+    target_col: str | None = "target",   # NEW: per-target within team
     score_col: str = "elfies_number",
     top_k: int = 4,
     # If True, include all rows tied at the boundary (may exceed top_k)
     keep_ties: bool = False,
 ) -> pd.DataFrame:
     """
-    Sort by score desc and keep top_k rows per team. Returns a new DataFrame
-    sorted by (team, score desc, then original order as tiebreaker).
+    Sort by score desc and keep top_k rows per group.
+
+    Grouping:
+      - If target_col is None → per team only.
+      - If target_col is not None → per (team, target).
+
+    Returns a new DataFrame sorted by (team, [target], score desc, then
+    original order as tiebreaker).
     """
+
+    # Basic column checks
     if team_col not in df.columns or score_col not in df.columns:
-        # Nothing to do if columns are missing
         return df.copy()
+    if target_col is not None and target_col not in df.columns:
+        return df.copy()
+
+    # Determine group columns
+    group_cols = [team_col] if target_col is None else [team_col, target_col]
 
     work = df.copy()
     # Make sure score is numeric
     work[score_col] = pd.to_numeric(work[score_col], errors="coerce")
-    # Stable sort: highest score first; keep original index for tie-breaks
+    # Stable sort: by group(s), then score desc, then original index for tie-breaks
+    sort_cols = group_cols + [score_col, "_orig_idx"]
+    ascending = [True] * len(group_cols) + [False, True]
+
     work["_orig_idx"] = np.arange(len(work))
-    work = work.sort_values([team_col, score_col, "_orig_idx"],
-                            ascending=[True, False, True],
-                            kind="mergesort")
+    work = work.sort_values(sort_cols, ascending=ascending, kind="mergesort")
 
     if not keep_ties:
         out = (
-            work.groupby(team_col, group_keys=False)
+            work.groupby(group_cols, group_keys=False)
                 .head(max(int(top_k), 0))
                 .drop(columns=["_orig_idx"])
         )
@@ -197,13 +214,13 @@ def top_k_per_team_by_score(
     def _take_with_ties(g: pd.DataFrame) -> pd.DataFrame:
         if top_k <= 0 or g.empty:
             return g.iloc[0:0]
-        # g is already sorted desc by score
+        # g is already sorted desc by score within each group
         boundary = g.iloc[min(len(g), top_k) - 1][score_col]
         mask = g[score_col] >= boundary
         return g.loc[mask]
 
     out = (
-        work.groupby(team_col, group_keys=False)
+        work.groupby(group_cols, group_keys=False)
             .apply(_take_with_ties)
             .drop(columns=["_orig_idx"])
             .reset_index(drop=True)
@@ -211,15 +228,16 @@ def top_k_per_team_by_score(
     return out
 
 
+
 def apply_elfies_topk_pipeline(
     df: pd.DataFrame,
     *,
-    pred_col: str = "pred_mean",
+    pred_col: str = "lambda_or_mu",
     q10_col: str = "q10",
     q90_col: str = "q90",
     team_col: str = "team",
     out_col: str = "elfies_number",
-    top_k: int = 4,
+    top_k: int = 8,
     keep_ties: bool = False,
 ) -> pd.DataFrame:
     """
@@ -244,12 +262,159 @@ def apply_elfies_topk_pipeline(
     )
     return df3
 
+import requests
+import pandas as pd
+import numpy as np
+from typing import Iterable, Set
+
+
+def _format_sportsdata_date(dt: pd.Timestamp) -> str:
+    """
+    SportsData.io wants dates like '2025-Oct-13'.
+    """
+    # Ensure it's a Timestamp
+    if not isinstance(dt, pd.Timestamp):
+        dt = pd.to_datetime(dt)
+    # Normalize to date only
+    dt = dt.normalize()
+    return dt.strftime("%Y-%b-%d")  # e.g. '2025-Oct-13'
+
+
+def fetch_projection_player_ids_for_dates(
+    dates: Iterable[pd.Timestamp],
+    api_key: str,
+) -> Set[int]:
+    """
+    For a collection of dates, call SportsData.io's
+    PlayerGameProjectionStatsByDate endpoint and return the union of
+    all PlayerIDs that have projections on any of those dates.
+    """
+    base_url = (
+        "https://api.sportsdata.io/api/nhl/fantasy/json/"
+        "PlayerGameProjectionStatsByDate"
+    )
+
+    all_ids: Set[int] = set()
+
+    for dt in pd.unique(list(dates)):
+        if pd.isna(dt):
+            continue
+
+        formatted = _format_sportsdata_date(pd.to_datetime(dt))
+        url = f"{base_url}/{formatted}"
+
+        resp = requests.get(url, params={"key": api_key}, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+
+        for row in data:
+            pid = row.get("PlayerID")
+            if pid is not None:
+                try:
+                    all_ids.add(int(pid))
+                except (TypeError, ValueError):
+                    continue
+
+    return all_ids
+
+
+def filter_to_projected_players_from_df(
+    df: pd.DataFrame,
+    *,
+    api_key: str,
+    player_id_col: str = "sportsdata_player_id",
+    date_col: str = "date",
+) -> pd.DataFrame:
+    """
+    Use dates present in `df[date_col]` to fetch SportsData projections,
+    then keep only rows whose player ID appears in *any* of those projections.
+    """
+    # Must have both date and player ID columns
+    if player_id_col not in df.columns or date_col not in df.columns:
+        return df
+
+    # Collect unique non-null dates
+    unique_dates = df[date_col].dropna().unique()
+    if len(unique_dates) == 0:
+        return df
+
+    projected_ids = fetch_projection_player_ids_for_dates(unique_dates, api_key=api_key)
+    if not projected_ids:
+        # No projections returned for those dates; safest is to keep everything
+        return df
+
+    mask = df[player_id_col].isin(projected_ids)
+    return df.loc[mask].reset_index(drop=True)
+
+def normalize_player_id(df: pd.DataFrame, col="player_id") -> pd.DataFrame:
+    if col not in df.columns:
+        return df
+
+    # Convert to string dtype
+    s = df[col].astype("string").str.strip()
+
+    # Remove trailing ".0", ".00", ".000", etc.
+    s = s.str.replace(r"\.0+$", "", regex=True)
+
+    # Remove all non-digit characters just in case
+    s = s.str.replace(r"\D", "", regex=True)
+
+    # Assign back
+    df[col] = s.astype("string")
+
+    return df
+
 def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
     df2 = df.copy()
+    #df2 = df2.where(
     df2 = normalize_columns(df2, cfg.rename_map)
+    df2 = normalize_player_id(df2, "player_id")
+    #df2 = normalize_player_id(df2, "PlayerID")
     #df2 = coerce_types(df2)
     df2 = normalize_dates(df2)
-    df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.5, 20), "q10": (0.01, 20), "q90": (0.5, 20)})
+    
+    #--------------------------------------
+    # 3) Remove players NOT in projections (per DF's own dates)
+    api_key = getattr(cfg, "sportsdata_api_key", "")
+    player_id_col = getattr(cfg, "player_id_col", "player_id")
+    date_col = getattr(cfg, "date_col", "date")  # or "game_date" if that's your name
+    print(f"\n=== DEFAULT_PIPELINE COUNT  0 OF DF ROWS {len(df2)}===")
+
+    #if api_key:
+        #df2 = filter_to_projected_players_from_df(
+            #df2,
+            #api_key=api_key,
+            #player_id_col="player_id",
+            #date_col="date",
+        
+
+    # 4) Your existing filtering logic
+    df2 = filter_columns_by_range(
+        df2,
+        {
+            "lambda_or_mu": (0.2, 20),
+            #"q10": (0.01, 20),
+            "q90": (0.1, 20),
+        },
+    )
+    print(f"\n=== DEFAULT_PIPELINE COUNT 1 OF DF ROWS {len(df2)}===")
+
+    df2 = apply_elfies_topk_pipeline(
+        df2,
+        pred_col=getattr(cfg, "pred_col", "lambda_or_mu"),
+        q10_col=getattr(cfg, "q10_col", "q10"),
+        q90_col=getattr(cfg, "q90_col", "q90"),
+        team_col=getattr(cfg, "team_col", "team"),
+        out_col=getattr(cfg, "elfies_out_col", "elfies_number"),
+        top_k=getattr(cfg, "elfies_top_k", 8),
+        keep_ties=getattr(cfg, "elfies_keep_ties", False),
+    )
+    #----------------------------------------
+    print(f"\n=== DEFAULT_PIPELINE COUNT 2 OF DF ROWS {len(df2)}===")
+
+    df2 = filter_columns_by_range(df2, {"lambda_or_mu": (0.2, 20), "q90": (0, 5)})
+    print(f"\n=== DEFAULT_PIPELINE COUNT 3 OF DF ROWS {len(df2)}===")
+
     df2  =apply_elfies_topk_pipeline(
         df2,
         pred_col=getattr(cfg, "pred_col", "lambda_or_mu"),
@@ -257,13 +422,29 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         q90_col=getattr(cfg, "q90_col", "q90"),
         team_col=getattr(cfg, "team_col", "team"),
         out_col=getattr(cfg, "elfies_out_col", "elfies_number"),
-        top_k=getattr(cfg, "elfies_top_k", 4),
+        top_k=getattr(cfg, "elfies_top_k", 8),
         keep_ties=getattr(cfg, "elfies_keep_ties", False),
     )
-    df2 = filter_columns_by_range(df2, {"elfies_number": (0.2, 3)})
+    
+    df2 = filter_columns_by_range(df2, {"elfies_number": (0.1, 8)})
+    print(f"\n=== DEFAULT_PIPELINE COUNT 4 OF DF ROWS {len(df2)}===")
+
     df2 = nullify_non_finite(df2)     # <- critical for JSON
     df2 = drop_missing_required(df2, cfg.required_cols)
     
-    for fn in cfg.processors:
-        df2 = fn(df2)
+    #for fn in cfg.processors:
+    #df2 = fn(df2)
+    print("\n=== DEFAULT_PIPELINE FINAL DF COLUMNS ===")
+    for c in df2.columns:
+        print(f" - {c}")
+    print("========================================\n")
+    print(f"\n=== DEFAULT_PIPELINE COUNT OF DF ROWS {len(df2)}===")
+    print("\n=== DEFAULT_PIPELINE FINAL DF ROWS ===")
+    for index, row in df2.iterrows():
+        n = row["player_id"]
+        d = row["date"]
+        print(f"Name: - {n}, date: {d}")
+    print("========================================\n")
+    
+    
     return df2.to_dict(orient="records")

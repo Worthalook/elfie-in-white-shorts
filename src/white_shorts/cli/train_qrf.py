@@ -244,6 +244,63 @@ def _train_one(df_feat: pd.DataFrame, target: str, version: str = "0.3.0") -> st
     return path
 
 
+
+import pandas as pd
+from pandas.api.types import is_categorical_dtype
+
+def _normalize_feature_dtypes(df: pd.DataFrame, feature_cols: list[str]) -> pd.DataFrame:
+    """
+    Ensure model features are not pandas Categoricals that can break
+    min/max/quantile/describe with 'values is not ordered' errors.
+    """
+    df2 = df.copy()
+    for col in feature_cols:
+        if col not in df2.columns:
+            continue
+        s = df2[col]
+
+        # If it's categorical, convert to string or numeric as appropriate.
+        if is_categorical_dtype(s):
+            # If it's basically a binary home/away flag, map to 0/1.
+            if col == "home_or_away":
+                # Try to map to numeric if possible, otherwise keep as string
+                s_str = s.astype(str).str.lower()
+                df2[col] = (
+                    s_str.map({"home": 1, "away": 0})
+                    .fillna(0)
+                    .astype("int8")
+                )
+            else:
+                # Default: keep as plain string, which is safe for describe/min/max
+                df2[col] = s.astype(str)
+
+        # If it's an object but should be numeric, coerce
+        elif s.dtype == "object":
+            try:
+                df2[col] = pd.to_numeric(s, errors="ignore")
+            except Exception:
+                # If coercion fails, leave as is
+                pass
+
+    return df2
+
+def _decategorize_all(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Convert any pandas Categorical columns in df to plain dtypes
+    (numeric when possible, otherwise string) to avoid
+    'values is not ordered' errors anywhere downstream.
+    """
+    df2 = df.copy()
+    for col in df2.columns:
+        s = df2[col]
+        if is_categorical_dtype(s):
+            # Try numeric first; if that fails, fall back to string
+            try:
+                df2[col] = pd.to_numeric(s, errors="raise")
+            except Exception:
+                df2[col] = s.astype(str)
+    return df2
+
 @app.command()
 def all(
     ytd_csv: Optional[str] = typer.Option(None, help="Path to YTD CSV (defaults to env WS_YTD_CSV or data/NHL_2023_24.csv)"),
@@ -267,8 +324,14 @@ def all(
     if df_raw.empty:
         raise typer.Exit(code=1)
 
-    # Feature engineering (your existing minimal pipeline)
+    # 1) Feature engineering
     df_feat = engineer_minimal(df_raw)
+
+    # 2) De-categorise EVERY column to get rid of unordered Categoricals
+    df_feat = _decategorize_all(df_feat)
+
+    # 3) Extra safety on model features (home_or_away, etc.)
+    df_feat = _normalize_feature_dtypes(df_feat, PLAYER_FEATURES)
 
     results = {}
     for tgt in _TARGETS:
@@ -276,6 +339,8 @@ def all(
         results[tgt] = path
         typer.echo(f"Trained & saved QRF for {tgt} → {path}")
     return results
+
+
 
 
 @app.command()
@@ -302,9 +367,13 @@ def target(
         raise typer.Exit(code=1)
 
     df_feat = engineer_minimal(df_raw)
+
+    # Keep dtype handling consistent with `all()`
+    df_feat = _decategorize_all(df_feat)
+    df_feat = _normalize_feature_dtypes(df_feat, PLAYER_FEATURES)
+
     path = _train_one(df_feat, name, version=version)
     typer.echo(f"Trained & saved QRF for {name} → {path}")
-
 
 if __name__ == "__main__":
     app()

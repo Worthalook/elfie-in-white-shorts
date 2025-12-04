@@ -1,0 +1,32 @@
+name: Deploy Flutter Web
+
+on:
+  push:
+    branches: [ main ]   # or whatever your main branch is
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'  # choose your version
+
+      - name: Install dependencies
+        working-directory: ./packages/whiteshorts_crowd_app
+        run: flutter pub get
+
+      - name: Build Flutter Web
+        working-directory: ./packages/whiteshorts_crowd_app
+        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: packages/whiteshorts_crowd_app/build/web

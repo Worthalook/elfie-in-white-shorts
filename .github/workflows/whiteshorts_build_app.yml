@@ -1,15 +1,20 @@
-name: WS BUILD APP
+
+name: WS Build App pipeline
 
 on:
-  push:
-    branches: [ "development" ]
+   push:
+     branches: [ "development" ]
+  
+#on:
+  # Manual run
+#  workflow_dispatch: {}
 
 
 jobs:
   ws-pipeline:
     runs-on: ubuntu-latest
     permissions:
-      contents: write    # needed to push data back to the repo
+      contents: write    # need ed to push data back to the repo
       actions: read
       checks: read
     steps:
@@ -18,8 +23,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
-          # If you later move DuckDB to Git LFS, also add:
-          # lfs: true..
+          # If insertef you later move DuckDB to Git LFS, also add:
+          # lfs: true
 
       - name: Add src to PYTHONPATH
         run: echo "PYTHONPATH=$GITHUB_WORKSPACE/src:$PYTHONPATH" >> $GITHUB_ENV
@@ -51,8 +56,8 @@ jobs:
             sudo apt-get install -y clang cmake ninja-build libgtk-3-dev
 
       # ---- Fetch pub dependencies ----
-      - name: Flutter Pub Get
-        working-directory: ./packages/whiteshorts_app2
+      - name: Flutter Pub Get y-all
+        working-directory: ./packages/whiteshorts_crowd_app
         run: flutter pub get
 
       # ---- Accept Android licenses ----
@@ -65,7 +70,24 @@ jobs:
 
       # ---- Build APK ----
       - name: Build App apk
-        working-directory: ./packages/whiteshorts_app2
+        working-directory: ./packages/whiteshorts_crowd_app
         run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: whiteshorts-app-release
+            path: packages/whiteshorts_crowd_app/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Build Web
+        working-directory: ./packages/whiteshorts_crowd_app
+        run: flutter build web --release
+
+      - name: Upload Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: whiteshorts-web-release
+            path: packages/whiteshorts_crowd_app/build/web/
+
 
     

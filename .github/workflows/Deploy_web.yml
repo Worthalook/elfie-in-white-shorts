@@ -25,7 +25,7 @@ jobs:
 
       - name: Build Flutter Web
         working-directory: ./packages/whiteshorts_crowd_app
-        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+        run: flutter build web --release --base-href "/elfie-in-white-shorts/"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

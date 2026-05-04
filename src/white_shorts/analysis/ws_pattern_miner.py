@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 """
 WhiteShorts pattern miner for predictions_for_broadcast
 
@@ -179,25 +179,23 @@ def bin_feature(
         return pd.cut(s, bins=bins, labels=labels, include_lowest=True)
 
 
-def add_binned_columns(df: pd.DataFrame) -> pd.DataFrame:
+def add_binned_columns(df: pd.DataFrame, n_bins: int = 4) -> pd.DataFrame:
+    """Bin prediction features using quantile-based cuts.
+
+    *n_bins* controls the number of quantile buckets for every continuous
+    feature.  Quantile-based binning self-calibrates to whatever scoring range
+    is natural for the sport, so the same function works for NHL, NBA, etc.
+    without needing hardcoded boundary values.
+    """
     df = df.copy()
 
-    # spread: fixed bins are usually intuitive
-    spread_bins = [0, 0.5, 1.0, 1.5, 2.5, np.inf]
-    df["spread_bin"] = bin_feature(df["spread"], bins=spread_bins)
+    df["spread_bin"] = bin_feature(df["spread"], q=n_bins, name="spread")
+    df["lambda_bin"] = bin_feature(df["lambda_or_mu"], q=n_bins, name="lambda")
+    df["q10_bin"] = bin_feature(df["q10"], q=n_bins, name="q10")
+    df["q90_bin"] = bin_feature(df["q90"], q=n_bins, name="q90")
 
-    # lambda_or_mu: quantiles
-    df["lambda_bin"] = bin_feature(df["lambda_or_mu"], q=4, name="lambda")
-
-    # q10 / q90: coarse bins
-    q10_bins = [-np.inf, 0.5, 1.0, 2.0, np.inf]
-    q90_bins = [-np.inf, 1.0, 2.0, 3.0, np.inf]
-    df["q10_bin"] = bin_feature(df["q10"], bins=q10_bins)
-    df["q90_bin"] = bin_feature(df["q90"], bins=q90_bins)
-
-    # elfies_number: if present, quantiles
     if "elfies_number" in df.columns:
-        df["elfies_bin"] = bin_feature(df["elfies_number"], q=4, name="elfies")
+        df["elfies_bin"] = bin_feature(df["elfies_number"], q=n_bins, name="elfies")
     else:
         df["elfies_bin"] = pd.NA
 
@@ -425,6 +423,7 @@ def parse_args():
     p.add_argument("--table", default="predictions_for_broadcast")
     p.add_argument("--limit", type=int, help="Optional row limit from Supabase.")
     p.add_argument("--min-n", type=int, default=20, help="Min rows per pattern group.")
+    p.add_argument("--n-bins", type=int, default=4, help="Number of quantile bins for continuous features.")
     p.add_argument("--output-dir", default="ws_pattern_output")
     return p.parse_args()
 
@@ -449,7 +448,7 @@ def main():
     df = preprocess(df_raw)
     print(f"[info] After filters: {len(df)} rows")
 
-    df = add_binned_columns(df)
+    df = add_binned_columns(df, n_bins=args.n_bins)
 
     # pattern tables
     group_cols = ["target", "elfies_bin", "spread_bin", "lambda_bin"]

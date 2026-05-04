@@ -15,5 +15,6 @@ class Settings:
     CURRENT_SEASON_SAMPLE_WEIGHT: float = float(os.getenv("WS_CURR_SEASON_W", 1.0))
     SEED: int = int(os.getenv("WS_SEED", 42))
     MODEL_VERSION_TAG: str = os.getenv("WS_MODEL_VERSION", "0.3.0")
+    SPORT: str = os.getenv("WS_SPORT", "nhl")
 
 settings = Settings()

@@ -1,78 +1,118 @@
-# src/white_shorts/modeling/io.py
-
 from __future__ import annotations
+import json
 import os
+import warnings
 from pathlib import Path
-import joblib
-from .trainers import ModelBundle
-import hashlib
-from .io_meta import write_model_meta
-from .metadata import infer_train_meta, write_meta
 
-# Normalize WS_MODELS_DIR (handles backslashes, trailing slashes, etc.)
+import joblib
+import hashlib
+
+from .trainers import ModelBundle
+from .io_meta import write_model_meta
+
 DEFAULT_DIR = Path(os.getenv("WS_MODELS_DIR", "models")).expanduser()
 
+
 def feature_sig(features: list[str]) -> str:
-    # order matters: the training order reflects in the model
     s = "|".join(features)
     return hashlib.sha1(s.encode("utf-8")).hexdigest()[:8]
 
 
-def save_model(bundle: ModelBundle, name: str | None = None, dir: Path | None = None) -> str:
-    dir = Path(dir or DEFAULT_DIR)
-    dir.mkdir(parents=True, exist_ok=True)
+def save_model(
+    bundle: ModelBundle,
+    name: str | None = None,
+    dir: Path | None = None,
+) -> str:
+    save_dir = Path(dir or DEFAULT_DIR)
+    save_dir.mkdir(parents=True, exist_ok=True)
+
     sig = feature_sig(bundle.features)
     fname = name or f"{bundle.model_name}_{sig}_{bundle.model_version}.joblib"
-    path = dir / fname
-    joblib.dump({
-        "model": bundle.model,
-        "features": bundle.features,
-        "target": bundle.target,
-        "model_name": bundle.model_name,
-        "model_version": bundle.model_version,
-    }, path)
-    try:
-        #-----------------------------------------------------------------
-        meta = infer_train_meta(
-        bundle=bundle,
-        train_df=train_df,  # the frame you trained on (or a representative sample)
-        extras={"rows_last_season": int(n_last), "rows_current": int(n_cur)},
+    path = save_dir / fname
+
+    sport = getattr(bundle, "sport", "nhl")
+
+    joblib.dump(
+        {
+            "model": bundle.model,
+            "features": bundle.features,
+            "target": bundle.target,
+            "model_name": bundle.model_name,
+            "model_version": bundle.model_version,
+            "sport": sport,
+        },
+        path,
     )
-    
-        write_meta(fname.replace(".joblib", ".meta.json"), meta)
-        #-----------------------------------------------------------------
-        write_model_meta(
-            path,
-            model_name=bundle.model_name,
-            model_version=bundle.model_version,
-            target=bundle.target,
-            features=bundle.features,
-            train_rows_last_season=getattr(bundle, "train_rows_last_season", None),
-            train_rows_current=getattr(bundle, "train_rows_current", None),
-            train_cutoff_max_date=str(getattr(bundle, "train_cutoff_max_date", "")) or None,
-        )
-    except Exception as e:
-        print(f"[warn] failed to write model meta: {e}")
+
+    # Build sidecar metadata from what the bundle knows.
+    extra = dict(getattr(bundle, "extra_meta", {}))
+    extra["sport"] = sport
+
+    write_model_meta(
+        str(path),
+        model_name=bundle.model_name,
+        model_version=bundle.model_version,
+        target=bundle.target,
+        features=bundle.features,
+        extra=extra,
+    )
+
     return str(path)
 
+
 def load_model(name_or_path: str, dir: Path | None = None) -> dict:
-    """
-    Accept either a bare filename (e.g. 'lgbm_poisson_points_0.3.0.joblib')
-    or an absolute/relative path (e.g. 'models\\lgbm_poisson_points_0.3.0.joblib').
-    """
     p = Path(name_or_path)
-    if p.exists():                      # full path given -> use as-is
+    if p.exists():
         return joblib.load(p)
-    base = Path(dir or DEFAULT_DIR)     # filename only -> join with models dir
+    base = Path(dir or DEFAULT_DIR)
     return joblib.load(base / name_or_path)
 
-def latest_model_path(prefix: str, features: list[str], dir: Path | None = None) -> str | None:
-    dir = Path(dir or DEFAULT_DIR)
+
+def latest_model_path(
+    prefix: str,
+    features: list[str],
+    dir: Path | None = None,
+    sport: str | None = None,
+) -> str | None:
+    search_dir = Path(dir or DEFAULT_DIR)
     sig = feature_sig(features)
-    # Prefer exact sig
-    candidates = sorted(dir.glob(f"{prefix}_{sig}_*.joblib"), key=lambda p: p.stat().st_mtime, reverse=True)
+
+    # Exact feature-signature match — safe to use directly.
+    candidates = sorted(
+        search_dir.glob(f"{prefix}_{sig}_*.joblib"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
     if candidates:
-        return str(candidates[0])
-    # Fallback to any prefix (kept for dev), but this may be mismatched
-    fallback = sorted(dir.glob(f"{prefix}_*.joblib"), key=lambda p: p.stat().st_mtime, reverse=True)
-    return str(fallback[0]) if fallback else None
+        path = str(candidates[0])
+        # Verify sport matches if caller supplied one.
+        if sport is not None:
+            try:
+                saved = joblib.load(path)
+                if saved.get("sport", "nhl") != sport:
+                    warnings.warn(
+                        f"Model at {path} was trained for sport "
+                        f"'{saved.get('sport')}' but sport='{sport}' requested. "
+                        "Retraining is recommended.",
+                        stacklevel=2,
+                    )
+            except Exception:
+                pass
+        return path
+
+    # Prefix-only fallback — feature set may not match.
+    fallback = sorted(
+        search_dir.glob(f"{prefix}_*.joblib"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    if fallback:
+        warnings.warn(
+            f"No model with exact feature signature '{sig}' found for prefix "
+            f"'{prefix}'. Falling back to '{fallback[0].name}' — feature "
+            "mismatch is possible. Run 'ws train' to rebuild.",
+            stacklevel=2,
+        )
+        return str(fallback[0])
+
+    return None

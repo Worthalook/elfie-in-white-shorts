@@ -221,6 +221,7 @@ def engineer_minimal(df: pd.DataFrame, adapter=None) -> pd.DataFrame:
     # 6. Goalie / keeper signal                                            #
     # ------------------------------------------------------------------ #
     if adp.goalie_signal_col and adp.goalie_signal_col in out.columns:
+        out[adp.goalie_signal_col] = pd.to_numeric(out[adp.goalie_signal_col], errors="coerce").fillna(0.0)
         out = out.sort_values(["opponent", "date"])
         out["opp_goalie_ga_smooth"] = (
             out.groupby("opponent")[adp.goalie_signal_col]

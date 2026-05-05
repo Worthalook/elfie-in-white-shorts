@@ -89,42 +89,47 @@ def _add_form_features(
     if not required.issubset(df.columns):
         return df
 
-    df2 = df.copy()
+    out = df.copy()
 
-    date_norm = pd.to_datetime(df2["date"], errors="coerce")
-    if getattr(date_norm.dt, "tz", None) is not None:
-        date_norm = date_norm.dt.tz_convert("UTC").dt.tz_localize(None)
-    df2["_date_ord"] = date_norm
+    date_col = pd.to_datetime(out["date"], errors="coerce")
+    if date_col.dt.tz is not None:
+        date_col = date_col.dt.tz_convert("UTC").dt.tz_localize(None)
+    out["date"] = date_col
+    out = out.sort_values(["player_id", "date"])
 
-    df2 = df2.sort_values(["player_id", "_date_ord"])
-    grouped = df2.groupby("player_id", group_keys=False)
+    # Coerce to a clean numeric Series stored in a temp column so
+    # transform operates on float64 with no NAType surprises.
+    out["_pts"] = pd.to_numeric(out[primary_col], errors="coerce").fillna(0.0)
 
-    def _per_player(g: pd.DataFrame) -> pd.DataFrame:
-        pts = pd.to_numeric(g[primary_col], errors="coerce").fillna(0.0)
+    # Use transform (Series → Series) instead of apply (DataFrame → DataFrame).
+    # This is safe in pandas 2.x and never drops the groupby key column.
+    grp = out.groupby("player_id", group_keys=False)["_pts"]
 
-        roll_short = pts.rolling(short_window, min_periods=1).mean().shift(1)
-        roll_long = pts.rolling(long_window, min_periods=1).mean().shift(1)
+    out["form_points_short_mean"] = grp.transform(
+        lambda s: s.rolling(short_window, min_periods=1).mean().shift(1)
+    )
+    out["form_points_long_mean"] = grp.transform(
+        lambda s: s.rolling(long_window, min_periods=1).mean().shift(1)
+    )
 
-        g["form_points_short_mean"] = roll_short
-        g["form_points_long_mean"] = roll_long
+    denom = out["form_points_long_mean"].replace(0.0, np.nan)
+    out["form_points_ratio_short_over_long"] = (
+        (out["form_points_short_mean"] / denom).replace([np.inf, -np.inf], np.nan)
+    )
+    out["form_points_diff_short_minus_long"] = (
+        out["form_points_short_mean"] - out["form_points_long_mean"]
+    )
 
-        denom = roll_long.replace(0.0, np.nan)
-        g["form_points_ratio_short_over_long"] = (
-            (roll_short / denom).replace([np.inf, -np.inf], np.nan)
-        )
-        g["form_points_diff_short_minus_long"] = roll_short - roll_long
-
-        games_since_last: list[int] = []
-        since = 0
-        for v in pts:
-            games_since_last.append(since)
+    def _since_last(s: pd.Series) -> pd.Series:
+        result, since = [], 0
+        for v in s:
+            result.append(since)
             since = 0 if v > 0 else since + 1
-        g["games_since_last_point"] = games_since_last
+        return pd.Series(result, index=s.index)
 
-        return g
+    out["games_since_last_point"] = grp.transform(_since_last)
 
-    df2 = grouped.apply(_per_player).reset_index(drop=True)
-    return df2.drop(columns=["_date_ord"])
+    return out.drop(columns=["_pts"])
 
 
 # ---------------------------------------------------------------------------

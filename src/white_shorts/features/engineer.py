@@ -94,7 +94,7 @@ def _add_form_features(
     date_norm = pd.to_datetime(df2["date"], errors="coerce")
     if getattr(date_norm.dt, "tz", None) is not None:
         date_norm = date_norm.dt.tz_convert("UTC").dt.tz_localize(None)
-    df2["_date_ord"] = date_norm.view("int64")
+    df2["_date_ord"] = date_norm
 
     df2 = df2.sort_values(["player_id", "_date_ord"])
     grouped = df2.groupby("player_id", group_keys=False)

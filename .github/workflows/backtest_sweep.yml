@@ -82,7 +82,7 @@ jobs:
 
       # ── Step 1: Fetch full 25-26 season data (one-off) ─────────────────
       - name: Fetch 25-26 season data
-        if: ${{ github.event.inputs.fetch_season == 'true' }}
+       # if: ${{ github.event.inputs.fetch_season == 'true' }}
         run: |
           python -m white_shorts.cli.backtest fetch-season \
             --start "${{ github.event.inputs.start_date }}" \

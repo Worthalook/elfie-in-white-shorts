@@ -1,6 +1,8 @@
 name: Backtest sweep
 
 on:
+  push:
+    branches: [ "claude-review" ]
   workflow_dispatch:
     inputs:
       start_date:

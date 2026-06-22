@@ -88,6 +88,14 @@ jobs:
             --start "${{ github.event.inputs.start_date }}" \
             --end   "${{ github.event.inputs.end_date }}" \
             --out   data/NHL_2526.csv
+            git pull
+            git add -A data/NHL_2526.csv  
+            if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Backtest sweep results ${{ github.event.inputs.start_date }}→${{ github.event.inputs.end_date }} [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
 
       - name: Verify season CSV
         run: |

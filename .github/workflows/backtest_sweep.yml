@@ -1,0 +1,156 @@
+name: Backtest sweep
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "Sweep start (YYYY-MM-DD)"
+        required: true
+        default: "2025-10-08"
+      end_date:
+        description: "Sweep end (YYYY-MM-DD)"
+        required: true
+        default: "2026-04-17"
+      alpha:
+        description: "Elfies v4 alpha exponent"
+        required: false
+        default: "1.0"
+      beta:
+        description: "Elfies v4 beta exponent"
+        required: false
+        default: "1.0"
+      fetch_season:
+        description: "Fetch 25-26 season data before sweep? (true on first run)"
+        required: true
+        default: "true"
+        type: choice
+        options: ["true", "false"]
+      reset_db:
+        description: "Reset DuckDB to clean slate before sweep?"
+        required: true
+        default: "true"
+        type: choice
+        options: ["true", "false"]
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 480
+    permissions:
+      contents: write
+      actions: read
+
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONUNBUFFERED: "1"
+      SPORTS_DATA_API_KEY: ${{ secrets.SPORTS_DATA_API_KEY }}
+      SPORTS_DATA_BASE: https://api.sportsdata.io
+      WS_PARQUET_DIR: data/parquet
+      DUCKDB_PATH: data/white_shorts.duckdb
+      WS_LAST_SEASON_W: "0.5"
+      WS_CURR_SEASON_W: "1.0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-bt-${{ runner.os }}-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: pip-bt-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install scipy
+
+      - name: Add src to PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/src:$PYTHONPATH" >> $GITHUB_ENV
+
+      # ── Step 1: Fetch full 25-26 season data (one-off) ─────────────────
+      - name: Fetch 25-26 season data
+        if: ${{ github.event.inputs.fetch_season == 'true' }}
+        run: |
+          python -m white_shorts.cli.backtest fetch-season \
+            --start "${{ github.event.inputs.start_date }}" \
+            --end   "${{ github.event.inputs.end_date }}" \
+            --out   data/NHL_2526.csv
+
+      - name: Verify season CSV
+        run: |
+          if [ -f data/NHL_2526.csv ]; then
+            wc -l data/NHL_2526.csv
+          else
+            echo "ERROR: data/NHL_2526.csv not found" && exit 1
+          fi
+
+      # ── Step 2: Reset DuckDB ────────────────────────────────────────────
+      - name: Reset DuckDB
+        if: ${{ github.event.inputs.reset_db == 'true' }}
+        run: |
+          python -m white_shorts.cli.backtest reset-db --yes
+
+      # ── Step 3: Run sweep ───────────────────────────────────────────────
+      - name: Run backtest sweep
+        run: |
+          python -m white_shorts.cli.backtest sweep \
+            "${{ github.event.inputs.start_date }}" \
+            "${{ github.event.inputs.end_date }}" \
+            --last-csv  data/NHL_2324.csv \
+            --curr-csv  data/NHL_2526.csv \
+            --alpha "${{ github.event.inputs.alpha }}" \
+            --beta  "${{ github.event.inputs.beta }}"
+
+      # ── Step 4: Upload artifacts ────────────────────────────────────────
+      - name: Upload backtest CSVs
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-results-${{ github.event.inputs.start_date }}
+          path: |
+            data/parquet/backtest/*.csv
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Upload DuckDB
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-duckdb-${{ github.event.inputs.start_date }}
+          path: data/white_shorts.duckdb
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Upload season CSV
+        if: ${{ github.event.inputs.fetch_season == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-2526-season-data
+          path: data/NHL_2526.csv
+          if-no-files-found: warn
+          retention-days: 365
+
+      # ── Step 5: Commit artifacts back to branch ─────────────────────────
+      - name: Commit results to branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull
+          git add -A data/parquet/backtest/*.csv  || true
+          git add -A data/NHL_2526.csv            || true
+          git add -f data/white_shorts.duckdb     || true
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Backtest sweep results ${{ github.event.inputs.start_date }}→${{ github.event.inputs.end_date }} [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi

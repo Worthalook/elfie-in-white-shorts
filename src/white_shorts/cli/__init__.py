@@ -5,6 +5,7 @@ from .predict import app as predict_app
 from .log_actuals import app as actuals_app
 from .dashboards import app as dashboards_app
 from .analyze import app as analyze_app
+from .backtest import app as backtest_app
 
 app = typer.Typer(help="WhiteShorts 3.0 CLI")
 app.add_typer(train_app, name="train")
@@ -12,3 +13,4 @@ app.add_typer(predict_app, name="predict")
 app.add_typer(actuals_app, name="log-actuals")
 app.add_typer(dashboards_app, name="dashboards")
 app.add_typer(analyze_app, name="analyze")
+app.add_typer(backtest_app, name="backtest")

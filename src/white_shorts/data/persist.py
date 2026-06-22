@@ -4,6 +4,16 @@ from pathlib import Path
 import pandas as pd
 from ..config import settings
 
+BACKTEST_COLS = [
+    "bt_id", "bt_date", "player_id", "name", "team", "opponent", "game_id", "target",
+    "lambda_or_mu", "q10", "q90", "p_ge_k_json",
+    "actual",
+    "elfies_v1", "elfies_v2", "elfies_v3", "elfies_v4", "elfies_standout",
+    "player_baseline",
+    "hit_1pt", "hit_2pt", "in_interval", "abs_error",
+    "season_weight", "alpha", "beta", "created_ts",
+]
+
 PRED_COLS = [
     "target", "date", "game_id", "team", "opponent",
     "player_id", "name", "model_name", "model_version",
@@ -32,6 +42,42 @@ def _sanitize_for_duckdb(df: pd.DataFrame) -> pd.DataFrame:
         if pd.api.types.is_datetime64tz_dtype(out["created_ts"]):
             out["created_ts"] = out["created_ts"].dt.tz_convert("UTC").dt.tz_localize(None)
     return out
+
+def init_backtest_db(con: duckdb.DuckDBPyConnection) -> None:
+    """Create fact_backtest_results table if it doesn't exist."""
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS fact_backtest_results AS SELECT * FROM (
+            SELECT
+                ''::VARCHAR     AS bt_id,
+                DATE '1970-01-01' AS bt_date,
+                ''::VARCHAR     AS player_id,
+                ''::VARCHAR     AS name,
+                ''::VARCHAR     AS team,
+                ''::VARCHAR     AS opponent,
+                ''::VARCHAR     AS game_id,
+                ''::VARCHAR     AS target,
+                0.0::DOUBLE     AS lambda_or_mu,
+                0.0::DOUBLE     AS q10,
+                0.0::DOUBLE     AS q90,
+                ''::VARCHAR     AS p_ge_k_json,
+                0.0::DOUBLE     AS actual,
+                0.0::DOUBLE     AS elfies_v1,
+                0.0::DOUBLE     AS elfies_v2,
+                0.0::DOUBLE     AS elfies_v3,
+                0.0::DOUBLE     AS elfies_v4,
+                0.0::DOUBLE     AS elfies_standout,
+                0.0::DOUBLE     AS player_baseline,
+                FALSE::BOOLEAN  AS hit_1pt,
+                FALSE::BOOLEAN  AS hit_2pt,
+                FALSE::BOOLEAN  AS in_interval,
+                0.0::DOUBLE     AS abs_error,
+                ''::VARCHAR     AS season_weight,
+                1.0::DOUBLE     AS alpha,
+                1.0::DOUBLE     AS beta,
+                TIMESTAMP '1970-01-01 00:00:00' AS created_ts
+        ) WHERE 1=0;
+    """)
+
 
 def init_db() -> None:
     con = _connect()
@@ -70,6 +116,7 @@ def init_db() -> None:
                 TIMESTAMP '1970-01-01 00:00:00' AS created_ts
         ) WHERE 1=0;
     """)
+    init_backtest_db(con)
     con.close()
 
 def _ordered_cols_for_table(con: duckdb.DuckDBPyConnection, table: str) -> list[str]:

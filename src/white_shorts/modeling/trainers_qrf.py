@@ -79,6 +79,7 @@ def train_player_qrf(
     target: str,
     version: str = "0.3.0",
     adapter=None,
+    sample_weight=None,
 ) -> ModelBundle:
     from ..sports.nhl import NHL_ADAPTER
     adp = adapter if adapter is not None else NHL_ADAPTER
@@ -103,6 +104,11 @@ def train_player_qrf(
     X = X.loc[mask]
     y = y_series.loc[mask].astype(float)
 
+    sw = None
+    if sample_weight is not None:
+        sw_series = pd.Series(sample_weight, index=df.index)
+        sw = sw_series.loc[mask].values
+
     rf = RandomForestRegressor(
         n_estimators=600,
         max_depth=None,
@@ -111,7 +117,7 @@ def train_player_qrf(
         n_jobs=-1,
         bootstrap=True,
     )
-    rf.fit(X, y)
+    rf.fit(X, y, sample_weight=sw)
 
     return ModelBundle(
         model=rf,

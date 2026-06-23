@@ -82,9 +82,16 @@ def _store_results(results: pd.DataFrame) -> None:
         con.close()
 
 
+_DEFAULT_START = "2025-10-08"
+_DEFAULT_END   = "2026-04-17"
+
 def _date_range(start: str, end: str) -> list[pd.Timestamp]:
+    start = (start or "").strip() or _DEFAULT_START
+    end   = (end   or "").strip() or _DEFAULT_END
     s = pd.Timestamp(start).normalize()
     e = pd.Timestamp(end).normalize()
+    if pd.isna(s) or pd.isna(e):
+        raise ValueError(f"Unparseable date range: {start!r} → {end!r}")
     dates = []
     cur = s
     while cur <= e:

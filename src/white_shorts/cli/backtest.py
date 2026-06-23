@@ -32,12 +32,21 @@ app = typer.Typer(help="Backtesting commands")
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _load_csv(path: str, label: str) -> pd.DataFrame:
+def _load_csv(path: str, label: str, optional: bool = False) -> pd.DataFrame:
     p = Path(path)
     if not p.exists():
+        if optional:
+            typer.echo(f"[backtest] {label} not found ({path}) — skipping")
+            return pd.DataFrame()
         typer.echo(f"[backtest] {label} not found: {path}", err=True)
         raise typer.Exit(1)
     df = pd.read_csv(path)
+    if len(df) < 2:
+        if optional:
+            typer.echo(f"[backtest] {label} is a stub ({len(df)} rows) — skipping")
+            return pd.DataFrame()
+        typer.echo(f"[backtest] {label} appears to be a stub file: {path}", err=True)
+        raise typer.Exit(1)
     df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.normalize()
     df["player_id"] = df["player_id"].astype(str)
     return df
@@ -166,7 +175,7 @@ def reset_db(
 @app.command()
 def run(
     date: str   = typer.Argument(..., help="Backtest date (YYYY-MM-DD)"),
-    last_csv: str  = typer.Option("data/NHL_2324.csv", help="Last-season CSV"),
+    last_csv: str  = typer.Option("data/NHL_2023_24.csv", help="Last-season CSV (optional — skipped if stub/missing)"),
     curr_csv: str  = typer.Option("data/NHL_2526.csv", help="Current-season CSV (full)"),
     bt_id: str  = typer.Option("", help="BT run ID (auto-generated if blank)"),
     alpha: float = typer.Option(1.0, help="Elfies v4 alpha exponent"),
@@ -178,7 +187,7 @@ def run(
     init_db()
     run_id = bt_id or str(uuid.uuid4())
 
-    df_last = _load_csv(last_csv, "last-season CSV")
+    df_last = _load_csv(last_csv, "last-season CSV", optional=True)
     df_curr = _load_csv(curr_csv, "current-season CSV")
 
     typer.echo(f"[backtest] date={date}  bt_id={run_id[:8]}…")
@@ -223,7 +232,7 @@ def run(
 def sweep(
     start: str  = typer.Argument(..., help="Sweep start date (YYYY-MM-DD)"),
     end: str    = typer.Argument(..., help="Sweep end date (YYYY-MM-DD)"),
-    last_csv: str  = typer.Option("data/NHL_2324.csv", help="Last-season CSV"),
+    last_csv: str  = typer.Option("data/NHL_2023_24.csv", help="Last-season CSV (optional — skipped if stub/missing)"),
     curr_csv: str  = typer.Option("data/NHL_2526.csv", help="Current-season CSV"),
     bt_id: str  = typer.Option("", help="BT sweep ID (auto-generated if blank)"),
     alpha: float = typer.Option(1.0),
@@ -243,7 +252,7 @@ def sweep(
     typer.echo(f"[backtest sweep] {start} → {end}  bt_id={run_id}")
     typer.echo(f"  alpha={alpha}  beta={beta}")
 
-    df_last = _load_csv(last_csv, "last-season CSV")
+    df_last = _load_csv(last_csv, "last-season CSV", optional=True)
     df_curr = _load_csv(curr_csv, "current-season CSV")
 
     dates = _date_range(start, end)

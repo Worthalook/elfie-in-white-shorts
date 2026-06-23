@@ -33,15 +33,20 @@ def _build_training_slice(
     """Concat last-season + current-season rows before bt_date.
 
     Attaches a '_season' column so sample weights can be recovered after
-    engineer_minimal() reorders rows.
+    engineer_minimal() reorders rows. df_last may be empty — handled gracefully.
     """
-    df_l = df_last.copy()
-    df_l["_season"] = "last"
+    frames = []
+
+    if df_last is not None and not df_last.empty:
+        df_l = df_last.copy()
+        df_l["_season"] = "last"
+        frames.append(df_l)
 
     df_c = df_current[df_current["date"] < bt_date].copy()
     df_c["_season"] = "current"
+    frames.append(df_c)
 
-    return pd.concat([df_l, df_c], ignore_index=True)
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 
 def _season_weights(df_feat: pd.DataFrame) -> np.ndarray | None:

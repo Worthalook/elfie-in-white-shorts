@@ -2,7 +2,7 @@ name: Backtest sweep
 
 on:
   push:
-    branches: [ "claude-review" ]
+    branches: [ "main" ]
   workflow_dispatch:
     inputs:
       start_date:
@@ -112,7 +112,7 @@ jobs:
           python -m white_shorts.cli.backtest sweep \
             "${{ github.event.inputs.start_date }}" \
             "${{ github.event.inputs.end_date }}" \
-            --last-csv  data/NHL_2324.csv \
+            --last-csv  data/NHL_2023_24.csv \
             --curr-csv  data/NHL_2526.csv \
             --alpha "${{ github.event.inputs.alpha }}" \
             --beta  "${{ github.event.inputs.beta }}"

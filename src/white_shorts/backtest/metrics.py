@@ -86,8 +86,60 @@ def add_all_elfies_variants(
     return out
 
 
-def compute_day_metrics(df: pd.DataFrame) -> dict:
+def _selection_metrics(
+    df: pd.DataFrame,
+    score_col: str,
+    top_ns: tuple[int, ...] = (5, 10, 20),
+) -> dict:
+    """Selection-quality metrics: how does top-N by score_col perform vs the field?
+
+    Primary question: when I pick the top N players, do I get better hit rates
+    and higher average actual points than the field (all players that day)?
+
+    Returns a flat dict of metrics, all keyed with the score_col name stripped
+    to keep column names clean (e.g. 'elfies_v2' → 'v2').
+    """
+    out: dict = {}
+    scored = df[[score_col, "actual"]].dropna()
+    if len(scored) < 3:
+        return out
+
+    actuals = scored["actual"]
+
+    # Field baselines (all players on this slate)
+    field_hit1 = float((actuals >= 1.0).mean())
+    field_hit2 = float((actuals >= 2.0).mean())
+    field_avg  = float(actuals.mean())
+    out["field_hit1_rate"]   = round(field_hit1, 4)
+    out["field_hit2_rate"]   = round(field_hit2, 4)
+    out["field_avg_actual"]  = round(field_avg, 4)
+    out["n_field"]           = int(len(scored))
+
+    # Top-N selection metrics
+    ranked = scored.sort_values(score_col, ascending=False)
+    for n in top_ns:
+        if len(ranked) < n:
+            continue
+        top = ranked.head(n)["actual"]
+        hit1 = float((top >= 1.0).mean())
+        hit2 = float((top >= 2.0).mean())
+        avg  = float(top.mean())
+        out[f"top_{n}_hit1_rate"]  = round(hit1, 4)
+        out[f"top_{n}_hit2_rate"]  = round(hit2, 4)
+        out[f"top_{n}_avg_actual"] = round(avg,  4)
+        # Lift: how much better than random field selection?
+        out[f"top_{n}_lift_hit1"]  = round(hit1 / field_hit1, 4) if field_hit1 > 0 else None
+        out[f"top_{n}_lift_hit2"]  = round(hit2 / field_hit2, 4) if field_hit2 > 0 else None
+        out[f"top_{n}_lift_avg"]   = round(avg  / field_avg,  4) if field_avg  > 0 else None
+
+    return out
+
+
+def compute_day_metrics(df: pd.DataFrame, primary: str = "elfies_v2") -> dict:
     """All metrics for one backtest date.
+
+    Primary metric: selection quality of the top-N players ranked by `primary`
+    (default elfies_v2) vs the field. Spearman is retained as a diagnostic.
 
     Requires 'actual' column. Returns a flat dict suitable for a summary CSV row.
     """
@@ -95,38 +147,25 @@ def compute_day_metrics(df: pd.DataFrame) -> dict:
     if "actual" not in df.columns or df["actual"].isna().all():
         return out
 
-    # Spearman rank correlation: each elfies variant vs actuals
-    if _HAS_SCIPY:
-        for var in ("elfies_v1", "elfies_v2", "elfies_v3", "elfies_v4", "elfies_standout"):
-            if var in df.columns:
-                valid = df[[var, "actual"]].dropna()
-                if len(valid) >= 5:
-                    rho, pval = spearmanr(valid[var], valid["actual"])
-                    out[f"spearman_{var}"] = round(float(rho), 4)
-                    out[f"spearman_{var}_pval"] = round(float(pval), 4)
-    else:
-        out["spearman_warning"] = "scipy not installed"
+    # --- Primary: selection quality (the metric that matters for WhiteShorts) ---
+    if primary in df.columns:
+        out.update(_selection_metrics(df, score_col=primary))
 
-    # Threshold hit rates (based on elfies_v1 for comparability)
-    if "elfies_v1" in df.columns:
-        for elfies_thresh, actual_thresh, label in [
-            (0.7, 1.0, "hit1_at_07"),
-            (1.5, 2.0, "hit2_at_15"),
-        ]:
-            subset = df[df["elfies_v1"] > elfies_thresh]
-            if len(subset) > 0:
-                out[label] = round(float((subset["actual"] >= actual_thresh).mean()), 4)
-                out[f"n_{label}"] = int(len(subset))
-            else:
-                out[label] = None
-                out[f"n_{label}"] = 0
-
-    # Calibration: % of actuals within [q10, q90]  (target ≈ 0.80 for an 80% interval)
+    # --- Calibration: interval coverage ---
     if "in_interval" in df.columns:
         out["calibration_80"] = round(float(df["in_interval"].mean()), 4)
 
-    # MAE on points prediction
+    # --- MAE: raw prediction error ---
     if "abs_error" in df.columns:
         out["mae"] = round(float(df["abs_error"].mean()), 4)
+
+    # --- Spearman: kept as a diagnostic, not the target ---
+    if _HAS_SCIPY:
+        for var in (primary, "elfies_v1", "elfies_standout"):
+            if var in df.columns:
+                valid = df[[var, "actual"]].dropna()
+                if len(valid) >= 5:
+                    rho, _ = spearmanr(valid[var], valid["actual"])
+                    out[f"spearman_{var}"] = round(float(rho), 4)
 
     return out

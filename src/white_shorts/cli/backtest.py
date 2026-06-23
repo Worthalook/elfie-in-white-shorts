@@ -295,11 +295,14 @@ def sweep(
         _store_results(results)
         summaries.append(summary)
 
-        # Progress log
-        rho = summary.get("spearman_elfies_v1", "n/a")
-        cal = summary.get("calibration_80", "n/a")
-        mae = summary.get("mae", "n/a")
-        typer.echo(f"  n={summary['n_players']}  ρ_v1={rho}  cal={cal}  mae={mae}")
+        # Progress log — selection quality is the primary signal
+        n    = summary.get("n_players", 0)
+        l5   = summary.get("top_5_lift_hit1",  "n/a")
+        l10  = summary.get("top_10_lift_hit1", "n/a")
+        l20  = summary.get("top_20_lift_hit1", "n/a")
+        avg5 = summary.get("top_5_avg_actual", "n/a")
+        cal  = summary.get("calibration_80",   "n/a")
+        typer.echo(f"  n={n}  lift_hit1 top5={l5} top10={l10} top20={l20}  avg_actual_top5={avg5}  cal={cal}")
 
     if not summaries:
         typer.echo("\nNo dates processed.", err=True)
@@ -312,11 +315,19 @@ def sweep(
     summary_csv = out_dir / f"sweep_summary_{run_id[:8]}.csv"
     summary_df.to_csv(summary_csv, index=False)
 
-    # Print aggregate stats
+    # Print aggregate stats — selection quality first
     typer.echo(f"\n=== Sweep complete: {len(summaries)} dates ===")
     typer.echo(f"  BT ID: {run_id}")
-    for col in summary_df.columns:
-        if col.startswith("spearman_elfies") or col in ("calibration_80", "mae", "hit1_at_07", "hit2_at_15"):
+    primary_cols = [
+        "field_hit1_rate", "field_hit2_rate", "field_avg_actual",
+        "top_5_hit1_rate",  "top_5_hit2_rate",  "top_5_avg_actual",  "top_5_lift_hit1",  "top_5_lift_avg",
+        "top_10_hit1_rate", "top_10_hit2_rate", "top_10_avg_actual", "top_10_lift_hit1", "top_10_lift_avg",
+        "top_20_hit1_rate", "top_20_hit2_rate", "top_20_avg_actual", "top_20_lift_hit1", "top_20_lift_avg",
+        "calibration_80", "mae",
+        "spearman_elfies_v2", "spearman_elfies_v1",
+    ]
+    for col in primary_cols:
+        if col in summary_df.columns:
             mean_val = pd.to_numeric(summary_df[col], errors="coerce").mean()
             if pd.notna(mean_val):
                 typer.echo(f"  mean {col}: {mean_val:.4f}")
@@ -371,10 +382,18 @@ def score(
 
     summary_df = pd.DataFrame(summaries)
 
-    # Print aggregate
+    # Print aggregate — selection quality first
     typer.echo(f"\n=== Re-score summary (α={alpha}, β={beta}) ===")
-    for col in summary_df.columns:
-        if col.startswith("spearman_elfies") or col in ("calibration_80", "mae", "hit1_at_07", "hit2_at_15"):
+    primary_cols = [
+        "field_hit1_rate", "field_hit2_rate", "field_avg_actual",
+        "top_5_hit1_rate",  "top_5_hit2_rate",  "top_5_avg_actual",  "top_5_lift_hit1",  "top_5_lift_avg",
+        "top_10_hit1_rate", "top_10_hit2_rate", "top_10_avg_actual", "top_10_lift_hit1", "top_10_lift_avg",
+        "top_20_hit1_rate", "top_20_hit2_rate", "top_20_avg_actual", "top_20_lift_hit1", "top_20_lift_avg",
+        "calibration_80", "mae",
+        "spearman_elfies_v2",
+    ]
+    for col in primary_cols:
+        if col in summary_df.columns:
             mean_val = pd.to_numeric(summary_df[col], errors="coerce").mean()
             if pd.notna(mean_val):
                 typer.echo(f"  mean {col}: {mean_val:.4f}")

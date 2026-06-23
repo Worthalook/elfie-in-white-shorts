@@ -269,6 +269,7 @@ def sweep(
     typer.echo(f"  Dates with game data: {len(dates)}")
 
     summaries: list[dict] = []
+    all_player_rows: list[pd.DataFrame] = []
 
     for i, dt in enumerate(dates, 1):
         date_str = dt.strftime("%Y-%m-%d")
@@ -294,6 +295,11 @@ def sweep(
 
         _store_results(results)
         summaries.append(summary)
+
+        # Accumulate slim player rows for ad hoc output
+        if not results.empty:
+            keep_cols = [c for c in ["bt_date", "name", "team", "opponent", "lambda_or_mu", "elfies_v2", "actual", "hit_1pt", "hit_2pt"] if c in results.columns]
+            all_player_rows.append(results[keep_cols])
 
         # Progress log — selection quality is the primary signal
         n    = summary.get("n_players", 0)
@@ -334,6 +340,16 @@ def sweep(
 
     typer.echo(f"\nSummary CSV → {summary_csv}")
     typer.echo(f"Results stored in DuckDB: fact_backtest_results (bt_id={run_id})")
+
+    # Ad hoc player-level output: name / predicted / actual, sorted by date then elfies desc
+    if all_player_rows:
+        adhoc_df = pd.concat(all_player_rows, ignore_index=True)
+        if "elfies_v2" in adhoc_df.columns:
+            adhoc_df = adhoc_df.sort_values(["bt_date", "elfies_v2"], ascending=[True, False])
+        adhoc_df = adhoc_df.rename(columns={"lambda_or_mu": "predicted_pts", "elfies_v2": "elfies"})
+        adhoc_csv = out_dir / f"adhoc_players_{run_id[:8]}.csv"
+        adhoc_df.to_csv(adhoc_csv, index=False)
+        typer.echo(f"Ad hoc player CSV → {adhoc_csv}")
 
 
 @app.command()

@@ -121,7 +121,7 @@ jobs:
       - name: Upload backtest CSVs
         uses: actions/upload-artifact@v4
         with:
-          name: backtest-results-${{ github.event.inputs.start_date }}
+          name: backtest-results-${{ github.event.inputs.start_date || '2025-10-08' }}
           path: |
             data/parquet/backtest/*.csv
           if-no-files-found: warn

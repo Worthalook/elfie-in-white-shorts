@@ -150,13 +150,21 @@ def run_single_date(
     slate["player_id"] = slate["player_id"].astype(str)
 
     # --- 6. Build feature rows: last snapshot per player before bt_date ---
+    # Exclude features already present in slate to avoid _x/_y column conflicts
+    slate_cols_set = set(slate.columns)
+    snap_extra = [f for f in available if f not in slate_cols_set]
+
     feat_snap = (
         df_feat[df_feat["date"] < bt_ts]
         .sort_values("date")
         .groupby(["player_id", "team"], as_index=False)
-        .tail(1)[["player_id", "team"] + available]
+        .tail(1)[["player_id", "team"] + snap_extra]
     )
     player_rows = slate.merge(feat_snap, on=["player_id", "team"], how="left")
+    # Fill any missing feature columns with zeros
+    for f in available:
+        if f not in player_rows.columns:
+            player_rows[f] = 0.0
     player_rows[available] = player_rows[available].fillna(0.0)
 
     if player_rows.empty:

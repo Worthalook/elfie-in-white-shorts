@@ -90,14 +90,16 @@ def _selection_metrics(
     df: pd.DataFrame,
     score_col: str,
     top_ns: tuple[int, ...] = (5, 10, 20),
+    prefix: str = "",
 ) -> dict:
     """Selection-quality metrics: how does top-N by score_col perform vs the field?
 
     Primary question: when I pick the top N players, do I get better hit rates
     and higher average actual points than the field (all players that day)?
 
-    Returns a flat dict of metrics, all keyed with the score_col name stripped
-    to keep column names clean (e.g. 'elfies_v2' → 'v2').
+    Returns a flat dict of metrics. Field baselines are only included when
+    prefix is empty (they are shared across all variants). Selection metrics
+    are prefixed with `prefix` so multiple variants can coexist in one dict.
     """
     out: dict = {}
     scored = df[[score_col, "actual"]].dropna()
@@ -105,32 +107,85 @@ def _selection_metrics(
         return out
 
     actuals = scored["actual"]
-
-    # Field baselines (all players on this slate)
     field_hit1 = float((actuals >= 1.0).mean())
     field_hit2 = float((actuals >= 2.0).mean())
     field_avg  = float(actuals.mean())
-    out["field_hit1_rate"]   = round(field_hit1, 4)
-    out["field_hit2_rate"]   = round(field_hit2, 4)
-    out["field_avg_actual"]  = round(field_avg, 4)
-    out["n_field"]           = int(len(scored))
 
-    # Top-N selection metrics
+    # Field baselines only once (when no prefix — the primary variant call)
+    if not prefix:
+        out["field_hit1_rate"]  = round(field_hit1, 4)
+        out["field_hit2_rate"]  = round(field_hit2, 4)
+        out["field_avg_actual"] = round(field_avg,  4)
+        out["n_field"]          = int(len(scored))
+
     ranked = scored.sort_values(score_col, ascending=False)
     for n in top_ns:
         if len(ranked) < n:
             continue
-        top = ranked.head(n)["actual"]
+        top  = ranked.head(n)["actual"]
         hit1 = float((top >= 1.0).mean())
         hit2 = float((top >= 2.0).mean())
         avg  = float(top.mean())
-        out[f"top_{n}_hit1_rate"]  = round(hit1, 4)
-        out[f"top_{n}_hit2_rate"]  = round(hit2, 4)
-        out[f"top_{n}_avg_actual"] = round(avg,  4)
-        # Lift: how much better than random field selection?
-        out[f"top_{n}_lift_hit1"]  = round(hit1 / field_hit1, 4) if field_hit1 > 0 else None
-        out[f"top_{n}_lift_hit2"]  = round(hit2 / field_hit2, 4) if field_hit2 > 0 else None
-        out[f"top_{n}_lift_avg"]   = round(avg  / field_avg,  4) if field_avg  > 0 else None
+        p = prefix
+        out[f"{p}top_{n}_hit1_rate"]  = round(hit1, 4)
+        out[f"{p}top_{n}_hit2_rate"]  = round(hit2, 4)
+        out[f"{p}top_{n}_avg_actual"] = round(avg,  4)
+        out[f"{p}top_{n}_lift_hit1"]  = round(hit1 / field_hit1, 4) if field_hit1 > 0 else None
+        out[f"{p}top_{n}_lift_hit2"]  = round(hit2 / field_hit2, 4) if field_hit2 > 0 else None
+        out[f"{p}top_{n}_lift_avg"]   = round(avg  / field_avg,  4) if field_avg  > 0 else None
+
+    return out
+
+
+def _bucket_metrics(
+    df: pd.DataFrame,
+    score_col: str,
+    baseline_col: str = "player_baseline",
+    top_n: int = 10,
+) -> dict:
+    """Selection lift broken down by player baseline scoring bucket.
+
+    Buckets (pts/game historical average):
+      rare       < 0.30  — role players, occasional contributors
+      occasional 0.30–0.60
+      reliable   0.60–1.00
+      star       > 1.00
+
+    For each bucket: what fraction of the field are they, and does the
+    formula preferentially select them when they're in-form?
+    """
+    out: dict = {}
+    if baseline_col not in df.columns or score_col not in df.columns:
+        return out
+
+    needed = [score_col, "actual", baseline_col]
+    scored = df[needed].dropna()
+    if len(scored) < 5:
+        return out
+
+    buckets = {
+        "rare":       scored[scored[baseline_col] < 0.30],
+        "occasional": scored[(scored[baseline_col] >= 0.30) & (scored[baseline_col] < 0.60)],
+        "reliable":   scored[(scored[baseline_col] >= 0.60) & (scored[baseline_col] < 1.00)],
+        "star":       scored[scored[baseline_col] >= 1.00],
+    }
+
+    # Top-N by score across the full slate
+    top_selected = scored.sort_values(score_col, ascending=False).head(top_n)
+
+    field_hit1 = float((scored["actual"] >= 1.0).mean())
+
+    for bname, bdf in buckets.items():
+        if bdf.empty:
+            continue
+        pct_field = round(len(bdf) / len(scored), 3)
+        # How many of the top-N come from this bucket?
+        in_top = top_selected[top_selected[baseline_col].isin(bdf[baseline_col])]
+        pct_selected = round(len(in_top) / top_n, 3) if top_n > 0 else None
+        bucket_hit1  = round(float((bdf["actual"] >= 1.0).mean()), 4) if len(bdf) > 0 else None
+        out[f"bkt_{bname}_pct_field"]    = pct_field
+        out[f"bkt_{bname}_pct_top{top_n}"] = pct_selected
+        out[f"bkt_{bname}_hit1_rate"]    = bucket_hit1
 
     return out
 
@@ -147,9 +202,18 @@ def compute_day_metrics(df: pd.DataFrame, primary: str = "elfies_v2") -> dict:
     if "actual" not in df.columns or df["actual"].isna().all():
         return out
 
-    # --- Primary: selection quality (the metric that matters for WhiteShorts) ---
+    # --- Primary: v2 selection quality (field baselines included here) ---
     if primary in df.columns:
         out.update(_selection_metrics(df, score_col=primary))
+
+    # --- Variant comparison: v1 and standout, prefixed so they sit alongside ---
+    for variant, col in [("v1_", "elfies_v1"), ("std_", "elfies_standout")]:
+        if col in df.columns:
+            out.update(_selection_metrics(df, score_col=col, prefix=variant))
+
+    # --- Player baseline bucket analysis ---
+    if primary in df.columns:
+        out.update(_bucket_metrics(df, score_col=primary))
 
     # --- Calibration: interval coverage ---
     if "in_interval" in df.columns:
@@ -159,7 +223,7 @@ def compute_day_metrics(df: pd.DataFrame, primary: str = "elfies_v2") -> dict:
     if "abs_error" in df.columns:
         out["mae"] = round(float(df["abs_error"].mean()), 4)
 
-    # --- Spearman: kept as a diagnostic, not the target ---
+    # --- Spearman: diagnostic only ---
     if _HAS_SCIPY:
         for var in (primary, "elfies_v1", "elfies_standout"):
             if var in df.columns:

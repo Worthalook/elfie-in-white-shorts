@@ -123,36 +123,31 @@ def add_elfies_number(
     out_col: str = "elfies_number",
 ) -> pd.DataFrame:
     """
-    Compute elfies_number = prediction / (1 + (q90 - q10)).
-    Fully robust against NaN, Inf, division-by-zero, and single-row inputs.
+    Compute elfies_number using the v2 formula: λ × P(score ≥ 1).
+
+    P(score ≥ 1) is estimated as 1 − e^{−λ} (Poisson approximation).
+    This rewards players with both a high predicted mean AND a high probability
+    of actually hitting at least one point — outperforming the previous
+    v1 formula (λ / (1 + spread)) on selection lift in backtesting.
+
+    q10_col / q90_col are retained in the signature for backward compatibility
+    but are not used by this formula.
     """
     import numpy as np
     import pandas as pd
 
     df2 = df.copy()
 
-    # --- Coerce to numeric and always wrap as Series ---
-    p = pd.Series(pd.to_numeric(df2.get(pred_col, np.nan), errors="coerce"), index=df2.index)
-    q10 = pd.Series(pd.to_numeric(df2.get(q10_col, np.nan), errors="coerce"), index=df2.index)
-    q90 = pd.Series(pd.to_numeric(df2.get(q90_col, np.nan), errors="coerce"), index=df2.index)
+    lam = pd.Series(pd.to_numeric(df2.get(pred_col, np.nan), errors="coerce"), index=df2.index)
+    lam = lam.clip(lower=0)
 
-    # --- Compute denominator safely ---
-    denom = 1.0 + (q90 - q10)
-    denom = pd.Series(denom, index=df2.index)
-    denom = denom.where(np.isfinite(denom), np.nan)
+    # P(X ≥ 1) for Poisson(λ) = 1 − e^{−λ}
+    p_ge_1 = 1.0 - np.exp(-lam)
 
-    # --- Boolean mask: safe even on single row ---
-    valid = (p.notna()) & (denom.notna()) & (denom > 0)
+    elfies = lam * p_ge_1
+    elfies = elfies.where(lam.notna() & np.isfinite(elfies), np.nan)
 
-    # --- Compute elfies_number ---
-    elfies = pd.Series(np.nan, index=df2.index, dtype="float64")
-    if valid.any():
-        elfies.loc[valid] = (p[valid] / denom[valid]).astype("float64")
-
-    # --- Clean up infinities ---
-    elfies = elfies.where(np.isfinite(elfies), np.nan)
     df2[out_col] = elfies
-
     return df2
 
 

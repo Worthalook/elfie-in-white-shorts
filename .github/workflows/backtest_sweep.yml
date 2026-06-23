@@ -85,8 +85,8 @@ jobs:
        # if: ${{ github.event.inputs.fetch_season == 'true' }}
         run: |
           python -m white_shorts.cli.backtest fetch-season \
-            --start "${{ github.event.inputs.start_date }}" \
-            --end   "${{ github.event.inputs.end_date }}" \
+            --start "${{ github.event.inputs.start_date || '2025-10-08' }}" \
+            --end   "${{ github.event.inputs.end_date   || '2026-04-17' }}" \
             --out   data/NHL_2526.csv
             git pull
             git add -A data/NHL_2526.csv  
@@ -110,12 +110,12 @@ jobs:
       - name: Run backtest sweep
         run: |
           python -m white_shorts.cli.backtest sweep \
-            "${{ github.event.inputs.start_date }}" \
-            "${{ github.event.inputs.end_date }}" \
+            "${{ github.event.inputs.start_date || '2025-10-08' }}" \
+            "${{ github.event.inputs.end_date   || '2026-04-17' }}" \
             --last-csv  data/NHL_2023_24.csv \
             --curr-csv  data/NHL_2526.csv \
-            --alpha "${{ github.event.inputs.alpha }}" \
-            --beta  "${{ github.event.inputs.beta }}"
+            --alpha "${{ github.event.inputs.alpha || '1.0' }}" \
+            --beta  "${{ github.event.inputs.beta  || '1.0' }}"
 
       # ── Step 4: Upload artifacts ────────────────────────────────────────
       - name: Upload backtest CSVs

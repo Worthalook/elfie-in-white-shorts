@@ -121,17 +121,18 @@ def add_elfies_number(
     q10_col: str = "q10",
     q90_col: str = "q90",
     out_col: str = "elfies_number",
+    alpha: float = 1.0,
+    beta: float = 1.0,
 ) -> pd.DataFrame:
     """
-    Compute elfies_number using the v2 formula: λ × P(score ≥ 1).
+    Compute elfies_number: λ^α × P(score ≥ 1)^β.
 
-    P(score ≥ 1) is estimated as 1 − e^{−λ} (Poisson approximation).
-    This rewards players with both a high predicted mean AND a high probability
-    of actually hitting at least one point — outperforming the previous
-    v1 formula (λ / (1 + spread)) on selection lift in backtesting.
+    Production formula (v2 with tunable exponents):
+      α — scales reward for higher predicted mean (default 1.0)
+      β — scales weight of the probability-of-scoring term (default 1.0)
 
-    q10_col / q90_col are retained in the signature for backward compatibility
-    but are not used by this formula.
+    At defaults this is: λ × (1 − e^{−λ}), the v2 baseline.
+    q10_col / q90_col retained for backward compatibility but unused.
     """
     import numpy as np
     import pandas as pd
@@ -141,10 +142,9 @@ def add_elfies_number(
     lam = pd.Series(pd.to_numeric(df2.get(pred_col, np.nan), errors="coerce"), index=df2.index)
     lam = lam.clip(lower=0)
 
-    # P(X ≥ 1) for Poisson(λ) = 1 − e^{−λ}
     p_ge_1 = 1.0 - np.exp(-lam)
 
-    elfies = lam * p_ge_1
+    elfies = (lam ** alpha) * (p_ge_1 ** beta)
     elfies = elfies.where(lam.notna() & np.isfinite(elfies), np.nan)
 
     df2[out_col] = elfies
@@ -234,10 +234,12 @@ def apply_elfies_topk_pipeline(
     out_col: str = "elfies_number",
     top_k: int = 8,
     keep_ties: bool = False,
+    alpha: float = 1.0,
+    beta: float = 1.0,
 ) -> pd.DataFrame:
     """
     Convenience wrapper that:
-      1) computes elfies_number
+      1) computes elfies_number (λ^α × P(score ≥ 1)^β)
       2) sorts by it (desc within team) and takes top_k per team
     Intended to be called AFTER clip_columns().
     """
@@ -247,6 +249,8 @@ def apply_elfies_topk_pipeline(
         q10_col=q10_col,
         q90_col=q90_col,
         out_col=out_col,
+        alpha=alpha,
+        beta=beta,
     )
     df3 = top_k_per_team_by_score(
         df2,
@@ -403,6 +407,8 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         out_col=getattr(cfg, "elfies_out_col", "elfies_number"),
         top_k=getattr(cfg, "elfies_top_k", 8),
         keep_ties=getattr(cfg, "elfies_keep_ties", False),
+        alpha=getattr(cfg, "elfies_alpha", 1.0),
+        beta=getattr(cfg, "elfies_beta", 1.0),
     )
     #----------------------------------------
     print(f"\n=== DEFAULT_PIPELINE COUNT 2 OF DF ROWS {len(df2)}===")
@@ -419,6 +425,8 @@ def default_pipeline(df: pd.DataFrame, cfg) -> list[dict]:
         out_col=getattr(cfg, "elfies_out_col", "elfies_number"),
         top_k=getattr(cfg, "elfies_top_k", 8),
         keep_ties=getattr(cfg, "elfies_keep_ties", False),
+        alpha=getattr(cfg, "elfies_alpha", 1.0),
+        beta=getattr(cfg, "elfies_beta", 1.0),
     )
     
     df2 = filter_columns_by_range(df2, {"elfies_number": (0.1, 8)})

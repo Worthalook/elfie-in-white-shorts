@@ -23,18 +23,22 @@ def elfies_v1(df: pd.DataFrame) -> pd.Series:
     return df["lambda_or_mu"] / (1 + _spread(df))
 
 
-def elfies_v2(df: pd.DataFrame) -> pd.Series:
-    """Probability-weighted: λ × P(score ≥ 1).
+def elfies_v2(df: pd.DataFrame, alpha: float = 1.0, beta: float = 1.0) -> pd.Series:
+    """Tunable production formula: λ^α × P(score ≥ 1)^β.
+
+    α scales how aggressively higher predicted means are rewarded.
+    β scales how much weight the probability-of-scoring term carries.
+    At defaults (1.0, 1.0) this is the baseline v2: λ × P(score ≥ 1).
 
     Uses p_ge_1 column if present (from QRF tree distribution).
     Falls back to Poisson approximation: 1 − e^{−λ}.
     """
+    lam = df["lambda_or_mu"].clip(lower=0)
     if "p_ge_1" in df.columns:
         p1 = pd.to_numeric(df["p_ge_1"], errors="coerce").fillna(0).clip(0, 1)
     else:
-        lam = df["lambda_or_mu"].clip(lower=0)
         p1 = 1.0 - np.exp(-lam)
-    return df["lambda_or_mu"] * p1
+    return (lam ** alpha) * (p1 ** beta)
 
 
 def elfies_v3(df: pd.DataFrame) -> pd.Series:
@@ -74,12 +78,17 @@ def add_all_elfies_variants(
     alpha: float = 1.0,
     beta: float = 1.0,
 ) -> pd.DataFrame:
-    """Compute all elfies variant columns and return a copy."""
+    """Compute all elfies variant columns and return a copy.
+
+    alpha / beta tune elfies_v2 (the production formula).
+    elfies_v1 and elfies_v3 are fixed baselines for comparison.
+    elfies_v4 is retained but fixed at (1,1) since v2 is now the tunable one.
+    """
     out = df.copy()
     out["elfies_v1"]       = elfies_v1(out)
-    out["elfies_v2"]       = elfies_v2(out)
+    out["elfies_v2"]       = elfies_v2(out, alpha=alpha, beta=beta)
     out["elfies_v3"]       = elfies_v3(out)
-    out["elfies_v4"]       = elfies_v4(out, alpha=alpha, beta=beta)
+    out["elfies_v4"]       = elfies_v4(out)           # fixed baseline, not tuned
     out["elfies_standout"] = (
         elfies_standout(out) if "player_baseline" in out.columns else np.nan
     )

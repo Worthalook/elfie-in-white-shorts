@@ -98,7 +98,7 @@ def run_single_date(
     df_last_season:    Pre-loaded last-season CSV (e.g. NHL_2324.csv).
     df_current_season: Pre-loaded current-season CSV (e.g. NHL_2526.csv), full season.
     bt_id:             UUID identifying this backtest sweep.
-    alpha, beta:       Elfies v4 exponent parameters.
+    alpha, beta:       Elfies v2 exponent parameters (λ^α × P(≥1)^β).
     version:           Model version tag.
 
     Returns

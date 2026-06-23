@@ -14,11 +14,11 @@ on:
         required: true
         default: "2026-04-17"
       alpha:
-        description: "Elfies v4 alpha exponent"
+        description: "Elfies v2 alpha exponent (λ^α × P(≥1)^β)"
         required: false
         default: "1.0"
       beta:
-        description: "Elfies v4 beta exponent"
+        description: "Elfies v2 beta exponent (λ^α × P(≥1)^β)"
         required: false
         default: "1.0"
       fetch_season:
